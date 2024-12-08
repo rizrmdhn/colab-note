@@ -12,7 +12,6 @@ import { ZodError } from "zod";
 
 import { db } from "@/server/db";
 import { getCurrentSession } from "@/lib/session";
-import memurai from "../redis/config/memurai";
 
 /**
  * 1. CONTEXT
@@ -136,7 +135,6 @@ export const protectedProcedure = t.procedure
       ctx: {
         session: { ...ctx.session },
         user: { ...ctx.user },
-        redis: memurai,
       },
     });
   });
