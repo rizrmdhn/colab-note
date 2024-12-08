@@ -3,6 +3,7 @@
 
 import { sql } from "drizzle-orm";
 import {
+  boolean,
   index,
   pgTableCreator,
   text,
@@ -178,6 +179,45 @@ export const friendRequests = createTable(
       friendIdIndex: index("friend_requests_friend_id_idx").on(
         friendRequests.friendId,
       ),
+    };
+  },
+);
+
+export const messages = createTable(
+  "messages",
+  {
+    id: uuid("id")
+      .primaryKey()
+      .notNull()
+      .$default(() => uuidv7()),
+    userId: uuid("user_id")
+      .references(() => users.id, {
+        onDelete: "cascade",
+      })
+      .notNull(),
+    friendId: uuid("friend_id")
+      .references(() => users.id, {
+        onDelete: "cascade",
+      })
+      .notNull(),
+    message: text("message").notNull(),
+    isUpdated: boolean("is_updated").notNull().default(false),
+    isDeleted: boolean("is_deleted").notNull().default(false),
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "string",
+    })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", {
+      withTimezone: true,
+      mode: "string",
+    }),
+  },
+  (messages) => {
+    return {
+      userIdIndex: index("messages_user_id_idx").on(messages.userId),
+      friendIdIndex: index("messages_friend_id_idx").on(messages.friendId),
     };
   },
 );

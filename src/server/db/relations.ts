@@ -1,5 +1,12 @@
 import { relations } from "drizzle-orm";
-import { blocked, friendRequests, friends, session, users } from "./schema";
+import {
+  blocked,
+  friendRequests,
+  friends,
+  messages,
+  session,
+  users,
+} from "./schema";
 
 export const sessionRelations = relations(session, ({ one }) => ({
   users: one(users, {
@@ -37,6 +44,17 @@ export const friendRequestRelations = relations(friendRequests, ({ one }) => ({
   }),
   friends: one(users, {
     fields: [friendRequests.friendId],
+    references: [users.id],
+  }),
+}));
+
+export const messageRelations = relations(messages, ({ one }) => ({
+  users: one(users, {
+    fields: [messages.userId],
+    references: [users.id],
+  }),
+  friends: one(users, {
+    fields: [messages.friendId],
     references: [users.id],
   }),
 }));
