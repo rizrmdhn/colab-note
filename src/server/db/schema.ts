@@ -85,6 +85,10 @@ export const session = createTable(
 export const friends = createTable(
   "friends",
   {
+    id: uuid("id")
+      .primaryKey()
+      .notNull()
+      .$default(() => uuidv7()),
     userId: uuid("user_id")
       .references(() => users.id, {
         onDelete: "cascade",
@@ -113,6 +117,10 @@ export const friends = createTable(
 export const blocked = createTable(
   "blocked",
   {
+    id: uuid("id")
+      .primaryKey()
+      .notNull()
+      .$default(() => uuidv7()),
     userId: uuid("user_id")
       .references(() => users.id, {
         onDelete: "cascade",
@@ -141,6 +149,10 @@ export const blocked = createTable(
 export const friendRequests = createTable(
   "friend_requests",
   {
+    id: uuid("id")
+      .primaryKey()
+      .notNull()
+      .$default(() => uuidv7()),
     userId: uuid("user_id")
       .references(() => users.id, {
         onDelete: "cascade",

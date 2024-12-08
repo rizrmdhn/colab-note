@@ -12,6 +12,7 @@ import { ZodError } from "zod";
 
 import { db } from "@/server/db";
 import { getCurrentSession } from "@/lib/session";
+import memurai from "../redis/config/memurai";
 
 /**
  * 1. CONTEXT

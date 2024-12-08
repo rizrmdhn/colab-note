@@ -19,7 +19,7 @@ export default async function layout({
   const { user } = await getCurrentSession();
 
   if (user) {
-    redirect(`/app/${user.id}`);
+    redirect(`/app`);
   }
 
   return children;

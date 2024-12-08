@@ -6,7 +6,7 @@ export default async function Page() {
   const { user } = await getCurrentSession();
 
   if (user) {
-    redirect(`/app/${user.id}`);
+    redirect(`/app`);
   }
 
   return (

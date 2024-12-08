@@ -34,10 +34,10 @@ export default function LoginForm() {
   const router = useRouter();
 
   const { mutate, status } = api.auth.login.useMutation({
-    onSuccess: (data) => {
+    onSuccess: () => {
       globalSuccessToast("Login success");
 
-      router.push(`/app/${data.userId}`);
+      router.push(`/app`);
     },
     onError: (error) => {
       globalErrorToast(error.message);
