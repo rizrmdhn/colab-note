@@ -81,3 +81,91 @@ export const session = createTable(
     };
   },
 );
+
+export const friends = createTable(
+  "friends",
+  {
+    userId: uuid("user_id")
+      .references(() => users.id, {
+        onDelete: "cascade",
+      })
+      .notNull(),
+    friendId: uuid("friend_id")
+      .references(() => users.id, {
+        onDelete: "cascade",
+      })
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "string",
+    })
+      .defaultNow()
+      .notNull(),
+  },
+  (friends) => {
+    return {
+      userIdIndex: index("friends_user_id_idx").on(friends.userId),
+      friendIdIndex: index("friends_friend_id_idx").on(friends.friendId),
+    };
+  },
+);
+
+export const blocked = createTable(
+  "blocked",
+  {
+    userId: uuid("user_id")
+      .references(() => users.id, {
+        onDelete: "cascade",
+      })
+      .notNull(),
+    blockedId: uuid("blocked_id")
+      .references(() => users.id, {
+        onDelete: "cascade",
+      })
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "string",
+    })
+      .defaultNow()
+      .notNull(),
+  },
+  (blocked) => {
+    return {
+      userIdIndex: index("blocked_user_id_idx").on(blocked.userId),
+      blockedIdIndex: index("blocked_blocked_id_idx").on(blocked.blockedId),
+    };
+  },
+);
+
+export const friendRequests = createTable(
+  "friend_requests",
+  {
+    userId: uuid("user_id")
+      .references(() => users.id, {
+        onDelete: "cascade",
+      })
+      .notNull(),
+    friendId: uuid("friend_id")
+      .references(() => users.id, {
+        onDelete: "cascade",
+      })
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "string",
+    })
+      .defaultNow()
+      .notNull(),
+  },
+  (friendRequests) => {
+    return {
+      userIdIndex: index("friend_requests_user_id_idx").on(
+        friendRequests.userId,
+      ),
+      friendIdIndex: index("friend_requests_friend_id_idx").on(
+        friendRequests.friendId,
+      ),
+    };
+  },
+);
