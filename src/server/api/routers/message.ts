@@ -2,12 +2,15 @@ import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { tracked } from "@trpc/server";
 import { ee } from "@/lib/event-emitter";
 import { z } from "zod";
-import { createMessageSchema } from "@/schema/message";
+import { createMessageSchema, updateMessageSchema } from "@/schema/message";
 import {
   createMessage,
   getAllMessages,
   getAllMessagesByUserId,
+  getMessageById,
+  getMessageByIdOnly,
   getMessageFullById,
+  updateMessage,
 } from "@/server/queries/messages.queries";
 import type { Message } from "@/types/messages";
 
@@ -38,7 +41,7 @@ export const messageRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input: { friendId } }) => {
-      const messages = await getAllMessages(ctx.session.userId, friendId);
+      const messages = await getAllMessages(ctx.session.userId, friendId, null);
 
       return messages;
     }),
@@ -55,6 +58,10 @@ export const messageRouter = createTRPCRouter({
     const messages = await getAllMessagesByUserId(ctx.session.userId);
 
     function* maybeYield(message: Message) {
+      if (ctx.session.userId === message.userId) {
+        return;
+      }
+
       yield tracked(message.id, message);
     }
 
@@ -79,15 +86,30 @@ export const messageRouter = createTRPCRouter({
         signal: signal,
       });
 
+      // Fetch the last message createdAt based on the last event id
+      let lastMessageCreatedAt = await (async () => {
+        const lastEventId = input.lastEventId;
+        if (!lastEventId) return null;
+
+        const message = await getMessageByIdOnly(lastEventId);
+
+        return message?.createdAt ?? null;
+      })();
+
       // First, yield any messages that were sent before the subscription
-      const messages = await getAllMessages(ctx.session.userId, input.friendId);
+      const messages = await getAllMessages(
+        ctx.session.userId,
+        input.friendId,
+        lastMessageCreatedAt,
+      );
 
       function* maybeYield(message: Message) {
-        if (message.friendId !== input.friendId) {
+        if (ctx.session.userId === message.userId) {
           return;
         }
 
-        if (input.lastEventId && message.id <= input.lastEventId) {
+        if (lastMessageCreatedAt && message.createdAt <= lastMessageCreatedAt) {
+          // ignore posts that we've already sent - happens if there is a race condition between the query and the event emitter
           return;
         }
 
@@ -101,5 +123,24 @@ export const messageRouter = createTRPCRouter({
       for await (const [, message] of iterable) {
         yield* maybeYield(message);
       }
+    }),
+
+  updateMessage: protectedProcedure
+    .input(updateMessageSchema)
+    .mutation(async ({ input, ctx }) => {
+      const message = await updateMessage(ctx.session.userId, input.id, input);
+
+      const fullMessage = await getMessageFullById(
+        ctx.session.userId,
+        message.id,
+      );
+
+      if (!fullMessage) {
+        throw new Error("Message not found");
+      }
+
+      ee.emit("sendMessage", ctx.session.userId, fullMessage);
+
+      return message;
     }),
 });

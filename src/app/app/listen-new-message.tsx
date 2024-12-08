@@ -1,6 +1,5 @@
 "use client";
 
-import { globalInfoToast } from "@/lib/utils";
 import { api } from "@/trpc/react";
 import type { Users } from "@/types/users";
 
@@ -17,7 +16,6 @@ export default function ListenNewMessage({ user }: ListenNewMessageProps) {
       const userData =
         data.data.userId === user.id ? data.data.friends : data.data.users;
 
-      globalInfoToast(`You have a new message from ${userData.username}`);
       utils.message.getMessages.invalidate({ friendId: userData.id });
     },
   });

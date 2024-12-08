@@ -29,9 +29,29 @@ export default function MessageForm({
     },
   });
 
+  const updateMessageMutation = api.message.updateMessage.useMutation({
+    onSuccess: () => {
+      globalSuccessToast("Message updated successfully");
+
+      setMessage("");
+      setMessageId("");
+      utils.message.getMessages.invalidate();
+    },
+    onError: (error) => {
+      globalErrorToast(error.message);
+    },
+  });
+
   return (
-    <div className="flex flex-1 flex-col">
-      <MessageList userId={userId} friendId={friendId} />
+    <div className="flex h-96 flex-1 flex-col">
+      <MessageList
+        userId={userId}
+        friendId={friendId}
+        onUpdate={(messageId, message) => {
+          setMessageId(messageId);
+          setMessage(message);
+        }}
+      />
       {messageId ? (
         <div className="p-4">
           <form>
@@ -48,6 +68,11 @@ export default function MessageForm({
                   onClick={(e) => {
                     e.preventDefault();
                     // Update
+                    updateMessageMutation.mutate({
+                      friendId,
+                      id: messageId,
+                      message,
+                    });
                   }}
                 >
                   {/* {isPending ? (
@@ -56,7 +81,7 @@ export default function MessageForm({
                   Update
                 </Button>
 
-                {message.trim() !== "" && (
+                {message.trim() !== "" && messageId && (
                   <Button
                     size="sm"
                     onClick={() => {

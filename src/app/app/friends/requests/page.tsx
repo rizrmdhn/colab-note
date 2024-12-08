@@ -3,12 +3,22 @@
 import FriendCard from "@/components/friend-card";
 import { Button } from "@/components/ui/button";
 import { globalErrorToast, globalSuccessToast } from "@/lib/utils";
+import { friendRequestStore } from "@/store/friend-request.store";
 import { api } from "@/trpc/react";
 import React, { Suspense } from "react";
 
 export default function FriendPage() {
   const utils = api.useUtils();
   const [requestList] = api.users.requestList.useSuspenseQuery();
+
+  const lastEventId = friendRequestStore((state) => state.lastEventId);
+  const setFriendRequestLastEventId = friendRequestStore(
+    (state) => state.setLastEventId,
+  );
+
+  if (requestList && lastEventId === false) {
+    setFriendRequestLastEventId(requestList.at(-1)?.id ?? null);
+  }
 
   const acceptRequestMutation = api.users.acceptRequest.useMutation({
     onSuccess: () => {

@@ -5,18 +5,23 @@ import {
   type updateMessageSchema,
   type createMessageSchema,
 } from "@/schema/message";
-import { and, asc, eq, or } from "drizzle-orm";
+import { and, asc, eq, gt, or } from "drizzle-orm";
 import { db } from "../db";
 import { messages } from "../db/schema";
 import { getFriendsByFriendIdOrUserId } from "./friends.queries";
 
-export const getAllMessages = async (userId: string, friendId: string) => {
+export const getAllMessages = async (
+  userId: string,
+  friendId: string,
+  createdAt: string | null,
+) => {
   const messagesList = await db.query.messages.findMany({
     where: and(
       or(
         and(eq(messages.userId, userId), eq(messages.friendId, friendId)),
         and(eq(messages.userId, friendId), eq(messages.friendId, userId)),
       ),
+      createdAt ? gt(messages.createdAt, createdAt) : undefined,
     ),
     orderBy: asc(messages.createdAt),
     with: {
@@ -47,6 +52,14 @@ export const getMessageById = async (userId: string, id: string) => {
       or(eq(messages.userId, userId), eq(messages.friendId, userId)),
       eq(messages.id, id),
     ),
+  });
+
+  return message;
+};
+
+export const getMessageByIdOnly = async (id: string) => {
+  const message = await db.query.messages.findFirst({
+    where: eq(messages.id, id),
   });
 
   return message;
@@ -121,10 +134,18 @@ export const updateMessage = async (
 
     const [updatedMessage] = await trx
       .update(messages)
-      .set(data)
+      .set({
+        ...data,
+        isUpdated: true,
+        updatedAt: new Date().toISOString(),
+      })
       .where(eq(messages.id, id))
       .returning()
       .execute();
+
+    if (!updatedMessage) {
+      throw new Error("Message not updated");
+    }
 
     return updatedMessage;
   });

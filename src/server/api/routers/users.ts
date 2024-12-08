@@ -4,6 +4,7 @@ import { tracked, TRPCError } from "@trpc/server";
 import { z } from "zod";
 import {
   acceptFriendRequestById,
+  getFriendRequestById,
   getFriendRequestsByUserId,
   getRequestListByUserId,
   insertFriendRequest,
@@ -70,8 +71,21 @@ export const usersRouter = createTRPCRouter({
         signal,
       });
 
+      // Fetch the last message createdAt based on the last event id
+      let lastMessageCreatedAt = await (async () => {
+        const lastEventId = input.lastEventId;
+        if (!lastEventId) return null;
+
+        const message = await getFriendRequestById(lastEventId);
+
+        return message?.createdAt ?? null;
+      })();
+
       // First, yield any pending friend requests from the database
-      const pendingRequests = await getFriendRequestsByUserId(input.userId);
+      const pendingRequests = await getFriendRequestsByUserId(
+        input.userId,
+        lastMessageCreatedAt,
+      );
 
       function* maybeYield(friendRequest: FriendRequest) {
         if (friendRequest.friendId === input.userId) {

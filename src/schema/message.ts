@@ -10,10 +10,8 @@ export const createMessageSchema = createInsertSchema(messages, {
   message: true,
 });
 
-export const updateMessageSchema = createInsertSchema(messages, {
-  message: () => z.string().min(1).max(255),
-  friendId: () => z.string().min(1).max(255),
-}).pick({
-  message: true,
-  friendId: true,
+export const updateMessageSchema = z.object({
+  id: z.string(),
+  message: z.string().min(1).max(255),
+  friendId: z.string().min(1).max(255),
 });

@@ -1,14 +1,21 @@
 import "server-only";
 
-import { and, eq, or } from "drizzle-orm";
+import { and, eq, gt, or } from "drizzle-orm";
 import { db } from "../db";
 import { friendRequests, friends } from "../db/schema";
 
-export const getFriendRequestsByUserId = async (userId: string) => {
+export const getFriendRequestsByUserId = async (
+  userId: string,
+  createdAt: string | null,
+) => {
   const friendRequestsList = await db.query.friendRequests.findMany({
-    where: or(
-      eq(friendRequests.userId, userId),
-      eq(friendRequests.friendId, userId),
+    where: and(
+      or(
+        eq(friendRequests.userId, userId),
+        eq(friendRequests.friendId, userId),
+      ),
+
+      createdAt ? gt(friendRequests.createdAt, createdAt) : undefined,
     ),
     with: {
       users: true,
@@ -17,6 +24,18 @@ export const getFriendRequestsByUserId = async (userId: string) => {
   });
 
   return friendRequestsList;
+};
+
+export const getFriendRequestById = async (id: string) => {
+  const friendRequest = await db.query.friendRequests.findFirst({
+    where: eq(friendRequests.id, id),
+    with: {
+      users: true,
+      friends: true,
+    },
+  });
+
+  return friendRequest;
 };
 
 export const getRequestByUserId = async (userId: string) => {

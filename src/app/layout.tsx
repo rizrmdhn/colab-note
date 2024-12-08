@@ -23,6 +23,10 @@ export default async function RootLayout({
       className={`${GeistSans.variable}`}
       suppressHydrationWarning
     >
+      <head>
+        <script src="https://unpkg.com/react-scan/dist/auto.global.js" async />
+        {/* rest of your scripts go under */}
+      </head>
       <body>
         <TRPCReactProvider>
           <Providers>

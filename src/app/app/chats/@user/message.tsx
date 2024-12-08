@@ -16,6 +16,7 @@ export default function Message({ user }: { user: Users }) {
       </div>
     );
   }
+
   return (
     <div className="flex h-full flex-1">
       <MessageForm userId={user.id} friendId={userId} />

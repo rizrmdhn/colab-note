@@ -3,13 +3,26 @@
 import FriendCard from "@/components/friend-card";
 import { api } from "@/trpc/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, useCallback } from "react";
 
 export default function NotePage() {
   const [users] = api.users.friendList.useSuspenseQuery();
-
   const searchParams = useSearchParams();
   const router = useRouter();
+
+  const handleFriendClick = useCallback(
+    (userId: string, friendId: string) => {
+      const targetUserId = userId === users.userId ? friendId : userId;
+      const currentUserId = searchParams.get("userId");
+
+      router.push(
+        currentUserId === targetUserId
+          ? "/app/chats"
+          : `/app/chats?userId=${targetUserId}`,
+      );
+    },
+    [router, searchParams, users.userId],
+  );
 
   return (
     <Suspense fallback={<div>Loading...</div>}>
@@ -19,19 +32,7 @@ export default function NotePage() {
             key={user.id}
             user={user.userId === users.userId ? user.friends : user.users}
             interactive
-            onClick={() => {
-              const userId =
-                user.userId === users.userId ? user.friendId : user.userId;
-
-              // get the search params from current URL if same user is clicked remove the query params
-              const currentUserId = searchParams.get("userId");
-              if (currentUserId === userId) {
-                router.push(`/app/chats`);
-                return;
-              }
-
-              router.push(`/app/chats?userId=${userId}`);
-            }}
+            onClick={() => handleFriendClick(user.userId, user.friendId)}
           />
         ))
       ) : (

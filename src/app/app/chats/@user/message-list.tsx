@@ -1,18 +1,61 @@
 import { api } from "@/trpc/react";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { format } from "date-fns";
+import { globalInfoToast } from "@/lib/utils";
+import { skipToken } from "@tanstack/react-query";
 
 interface MessageListProps {
   userId: string;
   friendId: string;
+  onUpdate: (messageId: string, message: string) => void;
 }
 
-export default function MessageList({ userId, friendId }: MessageListProps) {
+export default function MessageList({
+  userId,
+  friendId,
+  onUpdate,
+}: MessageListProps) {
   const listRef = useRef<HTMLDivElement>(null);
+
+  const [lastEventId, setLastEventId] = useState<
+    // Query has not been run yet
+    | false
+    // Empty list
+    | null
+    // Event id
+    | string
+  >(false);
 
   const [messages] = api.message.getMessages.useSuspenseQuery({
     friendId,
   });
+
+  if (messages && lastEventId === false) {
+    // We should only set the lastEventId once, if the SSE-connection is lost, it will automatically reconnect and continue from the last event id
+    // Changing this value will trigger a new subscription
+    setLastEventId(messages.at(-1)?.id ?? null);
+  }
+
+  const utils = api.useUtils();
+
+  // Enable subscription only when we have a valid userId
+  api.message.subscribeToMessages.useSubscription(
+    lastEventId === false ? skipToken : { friendId: userId ?? "", lastEventId },
+    {
+      onData: () => {
+        globalInfoToast("New message received");
+        utils.message.getMessages.invalidate();
+      },
+      onError: (error) => {
+        globalInfoToast(error.message);
+        const lastMessageEventId = messages?.at(-1)?.id;
+
+        if (lastMessageEventId) {
+          setLastEventId(lastMessageEventId);
+        }
+      },
+    },
+  );
 
   useEffect(() => {
     if (listRef.current) {
@@ -23,7 +66,7 @@ export default function MessageList({ userId, friendId }: MessageListProps) {
   return (
     <div
       ref={listRef}
-      className="flex-1 overflow-y-auto whitespace-pre-wrap p-4 text-sm"
+      className="h-96 flex-1 overflow-y-auto whitespace-pre-wrap p-4 text-sm"
     >
       {messages.map((message) => (
         <div
@@ -79,6 +122,18 @@ export default function MessageList({ userId, friendId }: MessageListProps) {
               </button>
             </div>
           )} */}
+          {message.userId === userId && (
+            <div className="flex gap-4 text-xs text-gray-600">
+              <button
+                className="hover:underline"
+                onClick={() => {
+                  onUpdate(message.id, message.message);
+                }}
+              >
+                Update
+              </button>
+            </div>
+          )}
         </div>
       ))}
 
