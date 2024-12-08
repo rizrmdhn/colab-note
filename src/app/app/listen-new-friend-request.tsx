@@ -24,7 +24,8 @@ export default function ListenNewFriendRequest({
         globalInfoToast(
           `You have a new friend request from ${data.data.users.name}`,
         );
-        utils.users.fetchAllUsers.invalidate();
+
+        utils.users.requestList.invalidate();
       },
     },
   );
