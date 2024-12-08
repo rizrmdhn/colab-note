@@ -7,6 +7,7 @@ import {
   getFriendRequestsByUserId,
   getRequestListByUserId,
   insertFriendRequest,
+  rejectFriendRequestById,
 } from "@/server/queries/friend-requests.queries";
 import type { FriendRequest } from "@/types/friend-request";
 import { ee } from "@/lib/event-emitter";
@@ -103,6 +104,21 @@ export const usersRouter = createTRPCRouter({
     )
     .mutation(async ({ input, ctx }) => {
       const friendRequest = await acceptFriendRequestById(
+        input.requestId,
+        ctx.session.userId,
+      );
+
+      return friendRequest;
+    }),
+
+  rejectRequest: protectedProcedure
+    .input(
+      z.object({
+        requestId: z.string(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const friendRequest = await rejectFriendRequestById(
         input.requestId,
         ctx.session.userId,
       );

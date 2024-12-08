@@ -117,3 +117,22 @@ export const acceptFriendRequestById = async (id: string, userId: string) => {
     return data;
   });
 };
+
+export const rejectFriendRequestById = async (id: string, userId: string) => {
+  return await db.transaction(async (trx) => {
+    const friendRequest = await trx.query.friendRequests.findFirst({
+      where: and(
+        eq(friendRequests.id, id),
+        eq(friendRequests.friendId, userId),
+      ),
+    });
+
+    if (!friendRequest) {
+      throw new Error("Friend request not found.");
+    }
+
+    await trx.delete(friendRequests).where(eq(friendRequests.id, id)).execute();
+
+    return friendRequest;
+  });
+};

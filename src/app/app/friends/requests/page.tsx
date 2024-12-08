@@ -22,6 +22,17 @@ export default function FriendPage() {
     },
   });
 
+  const rejectRequestMutation = api.users.rejectRequest.useMutation({
+    onSuccess: () => {
+      globalSuccessToast("Friend request rejected.");
+
+      utils.users.requestList.invalidate();
+    },
+    onError: (error) => {
+      globalErrorToast(error.message);
+    },
+  });
+
   return (
     <section>
       <div className="flex items-center lg:w-4/5 xl:w-full">
@@ -35,7 +46,18 @@ export default function FriendPage() {
                 key={data.id}
                 user={data.users}
                 action={
-                  <div className="ml-auto">
+                  <div className="ml-auto flex flex-row gap-2">
+                    <Button
+                      onClick={() => {
+                        rejectRequestMutation.mutate({
+                          requestId: data.id,
+                        });
+                      }}
+                      disabled={rejectRequestMutation.isPending}
+                      className="bg-red-500 text-white hover:bg-red-600 hover:text-white"
+                    >
+                      Reject
+                    </Button>
                     <Button
                       onClick={() => {
                         acceptRequestMutation.mutate({
