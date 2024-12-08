@@ -159,6 +159,7 @@ export const updateUser = async (
         password: await hash(data.password),
         name: data.name,
         avatar: data.avatar,
+        createdAt: new Date().toISOString(),
       })
       .where(eq(users.id, userId))
       .returning()
