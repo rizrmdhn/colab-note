@@ -136,6 +136,7 @@ export const protectedProcedure = t.procedure
       ctx: {
         session: { ...ctx.session },
         user: { ...ctx.user },
+        redis: memurai,
       },
     });
   });

@@ -1,13 +1,17 @@
 import "server-only";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, or } from "drizzle-orm";
 import { db } from "../db";
 import { friends } from "../db/schema";
 import { getBlockedByBlockedId } from "./blocked.queries";
 
 export const getFriendsByUserId = async (userId: string) => {
   const friendsList = await db.query.friends.findMany({
-    where: eq(friends.userId, userId),
+    where: or(eq(friends.userId, userId), eq(friends.friendId, userId)),
+    with: {
+      users: true,
+      friends: true,
+    },
   });
 
   return friendsList;
@@ -16,6 +20,17 @@ export const getFriendsByUserId = async (userId: string) => {
 export const getFriendsByFriendId = async (friendId: string) => {
   const friendsList = await db.query.friends.findFirst({
     where: eq(friends.friendId, friendId),
+  });
+
+  return friendsList;
+};
+
+export const getFriendsById = async (userId: string, id: string) => {
+  const friendsList = await db.query.friends.findFirst({
+    where: and(
+      or(eq(friends.userId, userId), eq(friends.friendId, userId)),
+      eq(friends.id, id),
+    ),
   });
 
   return friendsList;
@@ -56,17 +71,29 @@ export const insertFriend = async (userId: string, friendId: string) => {
   });
 };
 
-export const deleteFriend = async (userId: string, friendId: string) => {
-  await db.transaction(async (trx) => {
-    const isFriendExists = await getFriendsByFriendId(friendId);
+export const deleteFriend = async (userId: string, id: string) => {
+  return await db.transaction(async (trx) => {
+    const isFriendExists = await getFriendsById(userId, id);
 
     if (!isFriendExists) {
       throw new Error("Friend not exists");
     }
 
-    await trx
+    const [data] = await trx
       .delete(friends)
-      .where(and(eq(friends.userId, userId), eq(friends.friendId, friendId)))
+      .where(
+        and(
+          or(eq(friends.userId, userId), eq(friends.friendId, userId)),
+          eq(friends.id, id),
+        ),
+      )
+      .returning()
       .execute();
+
+    if (!data) {
+      throw new Error("Failed to delete friend");
+    }
+
+    return data;
   });
 };

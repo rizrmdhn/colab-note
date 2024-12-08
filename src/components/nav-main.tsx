@@ -32,7 +32,7 @@ export function NavMain({ items }: { items: NavMainItem[] }) {
     // For other paths, check if the current path starts with the URL
     // but make sure it's at a path boundary
     if (url !== "/app") {
-      return path.startsWith(url + "/") || path === url;
+      return path === url;
     }
     return false;
   };

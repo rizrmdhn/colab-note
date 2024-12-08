@@ -1,5 +1,6 @@
 "use client";
 
+import { globalInfoToast } from "@/lib/utils";
 import { api } from "@/trpc/react";
 import type { Users } from "@/types/users";
 
@@ -17,7 +18,10 @@ export default function ListenNewFriendRequest({
       userId: user.id,
     },
     {
-      onData: () => {
+      onData: (data) => {
+        globalInfoToast(
+          `You have a new friend request from ${data.data.users.name}`,
+        );
         utils.users.fetchAllUsers.invalidate();
       },
     },

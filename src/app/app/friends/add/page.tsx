@@ -8,13 +8,13 @@ import React, { Suspense } from "react";
 
 export default function FriendPage() {
   const utils = api.useUtils();
-  const [users] = api.users.friendList.useSuspenseQuery();
+  const [users] = api.users.fetchAllUsers.useSuspenseQuery();
 
-  const sendRequestMutation = api.users.removeFriend.useMutation({
+  const sendRequestMutation = api.users.sendFriendRequest.useMutation({
     onSuccess: () => {
-      globalSuccessToast("Friend removed.");
+      globalSuccessToast("Friend request sent!");
 
-      utils.users.friendList.invalidate();
+      utils.users.fetchAllUsers.invalidate();
     },
     onError: (error) => {
       globalErrorToast(error.message);
@@ -24,15 +24,15 @@ export default function FriendPage() {
   return (
     <section>
       <div className="flex items-center lg:w-4/5 xl:w-full">
-        <h1 className="text-lg font-semibold md:text-2xl">Friends</h1>
+        <h1 className="text-lg font-semibold md:text-2xl">Add Friends</h1>
       </div>
       <div className="flex flex-col flex-wrap gap-4 overflow-y-auto overflow-x-hidden p-4 lg:gap-6 lg:pb-2 lg:pl-6 lg:pr-6 lg:pt-2">
         <Suspense fallback={<div>Loading...</div>}>
-          {users.list.length > 0 ? (
-            users.list.map((user) => (
+          {users.length > 0 ? (
+            users.map((user) => (
               <FriendCard
                 key={user.id}
-                user={user.userId === users.userId ? user.friends : user.users}
+                user={user}
                 action={
                   <div className="ml-auto">
                     <Button
@@ -43,7 +43,7 @@ export default function FriendPage() {
                       }}
                       disabled={sendRequestMutation.isPending}
                     >
-                      Remove Friend
+                      Send Friend Request
                     </Button>
                   </div>
                 }

@@ -8,13 +8,14 @@ import React, { Suspense } from "react";
 
 export default function FriendPage() {
   const utils = api.useUtils();
-  const [users] = api.users.friendList.useSuspenseQuery();
+  const [requestList] = api.users.requestList.useSuspenseQuery();
 
-  const sendRequestMutation = api.users.removeFriend.useMutation({
+  const acceptRequestMutation = api.users.acceptRequest.useMutation({
     onSuccess: () => {
-      globalSuccessToast("Friend removed.");
+      globalSuccessToast("Friend request accepted.");
 
       utils.users.friendList.invalidate();
+      utils.users.requestList.invalidate();
     },
     onError: (error) => {
       globalErrorToast(error.message);
@@ -24,26 +25,26 @@ export default function FriendPage() {
   return (
     <section>
       <div className="flex items-center lg:w-4/5 xl:w-full">
-        <h1 className="text-lg font-semibold md:text-2xl">Friends</h1>
+        <h1 className="text-lg font-semibold md:text-2xl">Friends Request</h1>
       </div>
       <div className="flex flex-col flex-wrap gap-4 overflow-y-auto overflow-x-hidden p-4 lg:gap-6 lg:pb-2 lg:pl-6 lg:pr-6 lg:pt-2">
         <Suspense fallback={<div>Loading...</div>}>
-          {users.list.length > 0 ? (
-            users.list.map((user) => (
+          {requestList.length > 0 ? (
+            requestList.map((data) => (
               <FriendCard
-                key={user.id}
-                user={user.userId === users.userId ? user.friends : user.users}
+                key={data.id}
+                user={data.users}
                 action={
                   <div className="ml-auto">
                     <Button
                       onClick={() => {
-                        sendRequestMutation.mutate({
-                          friendId: user.id,
+                        acceptRequestMutation.mutate({
+                          requestId: data.id,
                         });
                       }}
-                      disabled={sendRequestMutation.isPending}
+                      disabled={acceptRequestMutation.isPending}
                     >
-                      Remove Friend
+                      Accept
                     </Button>
                   </div>
                 }

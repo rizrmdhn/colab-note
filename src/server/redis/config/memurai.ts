@@ -14,7 +14,6 @@ const memuraiConfig = {
   enableReadyCheck: true,
   connectTimeout: 10000,
   // Add Memurai-specific settings if needed
-  tls: env.MEMURAI_TLS ? {} : undefined,
 } satisfies RedisOptions;
 
 // Create Memurai client

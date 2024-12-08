@@ -11,6 +11,8 @@ export const metadata: Metadata = {
 
 export default function layout({ children }: { children: React.ReactNode }) {
   api.users.fetchAllUsers.prefetch();
+  api.users.requestList.prefetch();
+  api.users.friendList.prefetch();
 
   return <HydrateClient>{children}</HydrateClient>;
 }
