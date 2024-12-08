@@ -7,7 +7,6 @@ import {
   createMessage,
   getAllMessages,
   getAllMessagesByUserId,
-  getMessageById,
   getMessageByIdOnly,
   getMessageFullById,
   updateMessage,
@@ -87,7 +86,7 @@ export const messageRouter = createTRPCRouter({
       });
 
       // Fetch the last message createdAt based on the last event id
-      let lastMessageCreatedAt = await (async () => {
+      const lastMessageCreatedAt = await (async () => {
         const lastEventId = input.lastEventId;
         if (!lastEventId) return null;
 

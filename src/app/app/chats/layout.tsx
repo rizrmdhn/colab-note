@@ -16,7 +16,7 @@ export default function layout({
   children: React.ReactNode;
   user: React.ReactNode;
 }) {
-  api.users.friendList.prefetch();
+  api.users.friendMessageList.prefetch();
 
   return (
     <HydrateClient>

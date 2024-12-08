@@ -1,9 +1,10 @@
 import "server-only";
 
-import { and, eq, or } from "drizzle-orm";
+import { aliasedTable, and, desc, eq, or } from "drizzle-orm";
 import { db } from "../db";
-import { friends } from "../db/schema";
+import { friends, messages, users } from "../db/schema";
 import { getBlockedByBlockedId } from "./blocked.queries";
+import type { FriendWithDetails } from "@/types/friend";
 
 export const getFriendsByUserId = async (userId: string) => {
   const friendsList = await db.query.friends.findMany({
@@ -15,6 +16,83 @@ export const getFriendsByUserId = async (userId: string) => {
   });
 
   return friendsList;
+};
+
+export const getFriendsByUserIdOrderByMessageCreatedAt = async (
+  userId: string,
+) => {
+  const friendData = aliasedTable(users, "friendData");
+
+  const friendsWithMessages = await db
+    .select({
+      friend: friends,
+      users: users,
+      friends: friendData,
+      latestMessage: messages,
+    })
+    .from(friends)
+    .innerJoin(users, eq(users.id, userId))
+    .innerJoin(
+      friendData,
+      or(
+        and(
+          eq(friends.friendId, friendData.id),
+          eq(friends.userId, userId), // When user is initiator
+        ),
+        and(
+          eq(friends.userId, friendData.id),
+          eq(friends.friendId, userId), // When user is friend
+        ),
+      ),
+    )
+    .innerJoin(
+      messages,
+      and(
+        or(
+          and(
+            eq(messages.userId, userId),
+            eq(messages.friendId, friendData.id),
+          ),
+          and(
+            eq(messages.userId, friendData.id),
+            eq(messages.friendId, userId),
+          ),
+        ),
+      ),
+    )
+    .where(or(eq(friends.userId, userId), eq(friends.friendId, userId)))
+    .orderBy(desc(messages.createdAt));
+
+  const friendsWithDetails: FriendWithDetails[] = [];
+
+  for (const row of friendsWithMessages) {
+    const isUserTheInitiator = row.friend.userId === userId;
+    const isUserTheFriend = row.friend.friendId === userId;
+    const friendId = isUserTheInitiator
+      ? row.friend.friendId
+      : isUserTheFriend
+        ? row.friend.userId
+        : null;
+
+    if (
+      friendId &&
+      !friendsWithDetails.some((friend) => friend.friendId === friendId)
+    ) {
+      friendsWithDetails.push({
+        id: row.friend.id,
+        // Always set current user as userId
+        userId: userId,
+        // Always set the other user as friendId
+        friendId: friendId,
+        createdAt: row.friend.createdAt,
+        latestMessage: row.latestMessage,
+        users: row.users,
+        friends: row.friends,
+      });
+    }
+  }
+
+  return friendsWithDetails;
 };
 
 export const getFriendsByFriendId = async (friendId: string) => {

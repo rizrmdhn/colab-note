@@ -45,6 +45,7 @@ export default function MessageList({
       onData: () => {
         globalInfoToast("New message received");
         utils.message.getMessages.invalidate();
+        utils.users.friendMessageList.invalidate();
       },
       onError: (error) => {
         globalInfoToast(error.message);

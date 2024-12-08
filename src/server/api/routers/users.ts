@@ -15,6 +15,7 @@ import { ee } from "@/lib/event-emitter";
 import {
   deleteFriend,
   getFriendsByUserId,
+  getFriendsByUserIdOrderByMessageCreatedAt,
 } from "@/server/queries/friends.queries";
 
 export const usersRouter = createTRPCRouter({
@@ -22,6 +23,19 @@ export const usersRouter = createTRPCRouter({
     const users = await getAllUsers(ctx.session.userId);
 
     return users;
+  }),
+
+  friendMessageList: protectedProcedure.query(async ({ ctx }) => {
+    const friends = await getFriendsByUserIdOrderByMessageCreatedAt(
+      ctx.session.userId,
+    );
+
+    const data = {
+      list: friends,
+      userId: ctx.session.userId,
+    };
+
+    return data;
   }),
 
   friendList: protectedProcedure.query(async ({ ctx }) => {
@@ -72,7 +86,7 @@ export const usersRouter = createTRPCRouter({
       });
 
       // Fetch the last message createdAt based on the last event id
-      let lastMessageCreatedAt = await (async () => {
+      const lastMessageCreatedAt = await (async () => {
         const lastEventId = input.lastEventId;
         if (!lastEventId) return null;
 

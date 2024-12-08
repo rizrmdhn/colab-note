@@ -9,3 +9,5 @@ export type Message = InferQueryModel<
     };
   }
 >;
+
+export type OnlyMessage = InferQueryModel<"messages">;

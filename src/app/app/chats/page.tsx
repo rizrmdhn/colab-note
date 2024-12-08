@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback } from "react";
 
 export default function NotePage() {
-  const [users] = api.users.friendList.useSuspenseQuery();
+  const [users] = api.users.friendMessageList.useSuspenseQuery();
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -30,7 +30,13 @@ export default function NotePage() {
         users.list.map((user) => (
           <FriendCard
             key={user.id}
-            user={user.userId === users.userId ? user.friends : user.users}
+            user={
+              user.friendId === users.userId
+                ? user.users
+                : user.userId === users.userId
+                  ? user.friends
+                  : user.users
+            }
             interactive
             onClick={() => handleFriendClick(user.userId, user.friendId)}
           />
