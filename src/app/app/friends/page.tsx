@@ -1,9 +1,10 @@
 "use client";
 
 import FriendCard from "@/components/friend-card";
-import { Button } from "@/components/ui/button";
-import { globalErrorToast, globalSuccessToast } from "@/lib/utils";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn, globalErrorToast, globalSuccessToast } from "@/lib/utils";
 import { api } from "@/trpc/react";
+import Link from "next/link";
 import React, { Suspense } from "react";
 
 export default function FriendPage() {
@@ -34,7 +35,7 @@ export default function FriendPage() {
                 key={user.id}
                 user={user.userId === users.userId ? user.friends : user.users}
                 action={
-                  <div className="ml-auto">
+                  <div className="ml-auto flex flex-row gap-2">
                     <Button
                       onClick={() => {
                         sendRequestMutation.mutate({
@@ -45,6 +46,16 @@ export default function FriendPage() {
                     >
                       Remove Friend
                     </Button>
+                    <Link
+                      href={
+                        user.userId === users.userId
+                          ? `/app/chats/${user.friendId}`
+                          : `/app/chats/${user.userId}`
+                      }
+                      className={cn(buttonVariants({ variant: "default" }))}
+                    >
+                      Send Message
+                    </Link>
                   </div>
                 }
               />
