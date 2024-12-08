@@ -5,6 +5,7 @@ import { type Metadata } from "next";
 
 import { TRPCReactProvider } from "@/trpc/react";
 import { Toaster } from "@/components/ui/sonner";
+import Providers from "./provider";
 
 export const metadata: Metadata = {
   title: "Login - Collaborative Note Taking",
@@ -17,11 +18,17 @@ export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${GeistSans.variable}`}>
+    <html
+      lang="en"
+      className={`${GeistSans.variable}`}
+      suppressHydrationWarning
+    >
       <body>
         <TRPCReactProvider>
-          {children}
-          <Toaster position="bottom-right" richColors />
+          <Providers>
+            {children}
+            <Toaster position="bottom-right" richColors />
+          </Providers>
         </TRPCReactProvider>
       </body>
     </html>

@@ -6,7 +6,7 @@ export default function NotFoundComponent() {
   const router = useRouter();
 
   return (
-    <div className="flex min-h-[100dvh] flex-col items-center justify-center px-4 py-12 text-center">
+    <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-gray-50 px-4 py-12 text-center dark:bg-gray-900 dark:text-gray-50">
       <div className="max-w-md space-y-4">
         <h1 className="text-9xl font-bold text-gray-900 dark:text-gray-50">
           404
@@ -14,7 +14,7 @@ export default function NotFoundComponent() {
         <h2 className="text-3xl font-semibold text-gray-900 dark:text-gray-50">
           Oops! Page not found.
         </h2>
-        <p className="text-gray-500 dark:text-gray-400">
+        <p className="text-gray-500 dark:text-gray-50">
           The page you are looking for does not exist or has been moved.
         </p>
         <a
