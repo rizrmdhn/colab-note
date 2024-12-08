@@ -1,8 +1,10 @@
 import type { FriendRequest } from "@/types/friend-request";
+import type { Message } from "@/types/messages";
 import EventEmitter, { on } from "node:events";
 
 export interface MyEvents {
   addFriend: (userId: string, friend: FriendRequest) => void;
+  sendMessage: (userId: string, message: Message) => void;
 }
 declare interface MyEventEmitter {
   on<TEv extends keyof MyEvents>(event: TEv, listener: MyEvents[TEv]): this;

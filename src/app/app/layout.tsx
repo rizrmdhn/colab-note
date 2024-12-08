@@ -11,6 +11,7 @@ import { HomeIcon, ListTodo, MessageSquareText, Users } from "lucide-react";
 import { getCurrentSession } from "@/lib/session";
 import { redirect } from "next/navigation";
 import ListenNewFriendRequest from "./listen-new-friend-request";
+import ListenNewMessage from "./listen-new-message";
 
 export const metadata: Metadata = {
   title: "Colab Note - Collaborative Note Taking",
@@ -82,6 +83,7 @@ export default async function layout({
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
           {children}
           <ListenNewFriendRequest user={user} />
+          <ListenNewMessage user={user} />
         </div>
       </SidebarInset>
     </SidebarProvider>

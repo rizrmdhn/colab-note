@@ -1,19 +1,14 @@
-"use client";
-
-import { useSearchParams } from "next/navigation";
 import React from "react";
+import { getCurrentSession } from "@/lib/session";
+import Message from "./message";
+import { redirect } from "next/navigation";
 
-export default function DetailChats() {
-  const searchParams = useSearchParams();
-  const userId = searchParams.get("userId");
+export default async function DetailChats() {
+  const { user } = await getCurrentSession();
 
-  if (!userId) {
-    return null;
+  if (!user) {
+    redirect("/");
   }
 
-  return (
-    <div className="flex flex-col flex-wrap gap-4 overflow-y-auto overflow-x-hidden p-4 lg:gap-6 lg:pb-2 lg:pl-6 lg:pr-6 lg:pt-2">
-      Hello {userId}
-    </div>
-  );
+  return <Message user={user} />;
 }

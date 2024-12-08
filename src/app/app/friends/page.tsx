@@ -49,8 +49,8 @@ export default function FriendPage() {
                     <Link
                       href={
                         user.userId === users.userId
-                          ? `/app/chats/${user.friendId}`
-                          : `/app/chats/${user.userId}`
+                          ? `/app/chats?userId=${user.friendId}`
+                          : `/app/chats?userId=${user.userId}`
                       }
                       className={cn(buttonVariants({ variant: "default" }))}
                     >

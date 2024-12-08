@@ -25,6 +25,20 @@ export const getFriendsByFriendId = async (friendId: string) => {
   return friendsList;
 };
 
+export const getFriendsByFriendIdOrUserId = async (
+  userId: string,
+  friendId: string,
+) => {
+  const friendsList = await db.query.friends.findFirst({
+    where: or(
+      and(eq(friends.userId, userId), eq(friends.friendId, friendId)),
+      and(eq(friends.userId, friendId), eq(friends.friendId, userId)),
+    ),
+  });
+
+  return friendsList;
+};
+
 export const getFriendsById = async (userId: string, id: string) => {
   const friendsList = await db.query.friends.findFirst({
     where: and(
