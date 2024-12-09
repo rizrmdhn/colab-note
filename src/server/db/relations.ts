@@ -4,6 +4,8 @@ import {
   friendRequests,
   friends,
   messages,
+  noteCollaborators,
+  notes,
   session,
   users,
 } from "./schema";
@@ -57,4 +59,12 @@ export const messageRelations = relations(messages, ({ one }) => ({
     fields: [messages.friendId],
     references: [users.id],
   }),
+}));
+
+export const noteRelations = relations(notes, ({ one, many }) => ({
+  users: one(users, {
+    fields: [notes.userId],
+    references: [users.id],
+  }),
+  collaborator: many(noteCollaborators),
 }));

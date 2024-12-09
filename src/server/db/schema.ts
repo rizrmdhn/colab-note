@@ -1,10 +1,12 @@
 // Example model schema from the Drizzle docs
 // https://orm.drizzle.team/docs/sql-schema-declaration
 
+import { AVALIABLE_COLLABORATOR_TYPE } from "@/lib/constants";
 import { sql } from "drizzle-orm";
 import {
   boolean,
   index,
+  pgEnum,
   pgTableCreator,
   text,
   timestamp,
@@ -21,6 +23,8 @@ import { v7 as uuidv7 } from "uuid";
  * @see https://orm.drizzle.team/docs/goodies#multi-project-schema
  */
 export const createTable = pgTableCreator((name) => `${name}`);
+
+export const statusEnum = pgEnum("type", AVALIABLE_COLLABORATOR_TYPE);
 
 export const users = createTable(
   "users",
@@ -109,8 +113,9 @@ export const friends = createTable(
   },
   (friends) => {
     return {
+      friendIdIndex: index("friends_id_idx").on(friends.id),
       userIdIndex: index("friends_user_id_idx").on(friends.userId),
-      friendIdIndex: index("friends_friend_id_idx").on(friends.friendId),
+      friendsFriendIdIndex: index("friends_friend_id_idx").on(friends.friendId),
     };
   },
 );
@@ -141,8 +146,11 @@ export const blocked = createTable(
   },
   (blocked) => {
     return {
+      blockedIdIndex: index("blocked_id_idx").on(blocked.id),
       userIdIndex: index("blocked_user_id_idx").on(blocked.userId),
-      blockedIdIndex: index("blocked_blocked_id_idx").on(blocked.blockedId),
+      blockedBlockedIdIndex: index("blocked_blocked_id_idx").on(
+        blocked.blockedId,
+      ),
     };
   },
 );
@@ -173,6 +181,9 @@ export const friendRequests = createTable(
   },
   (friendRequests) => {
     return {
+      friendRequestIdIndex: index("friend_requests_id_idx").on(
+        friendRequests.id,
+      ),
       userIdIndex: index("friend_requests_user_id_idx").on(
         friendRequests.userId,
       ),
@@ -217,8 +228,83 @@ export const messages = createTable(
   },
   (messages) => {
     return {
+      messageIdIndex: index("messages_id_idx").on(messages.id),
       userIdIndex: index("messages_user_id_idx").on(messages.userId),
       friendIdIndex: index("messages_friend_id_idx").on(messages.friendId),
+    };
+  },
+);
+
+export const notes = createTable(
+  "notes",
+  {
+    id: uuid("id")
+      .primaryKey()
+      .notNull()
+      .$default(() => uuidv7()),
+    userId: uuid("user_id")
+      .references(() => users.id, {
+        onDelete: "cascade",
+      })
+      .notNull(),
+    title: varchar("title", { length: 255 }).notNull(),
+    content: text("content").notNull(),
+    isDeleted: boolean("is_deleted").notNull().default(false),
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "string",
+    })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", {
+      withTimezone: true,
+      mode: "string",
+    }),
+  },
+  (notes) => {
+    return {
+      notesIdIndex: index("notes_id_idx").on(notes.id),
+      userIdIndex: index("notes_user_id_idx").on(notes.userId),
+    };
+  },
+);
+
+export const noteCollaborators = createTable(
+  "note_collaborators",
+  {
+    id: uuid("id")
+      .primaryKey()
+      .notNull()
+      .$default(() => uuidv7()),
+    noteId: uuid("note_id")
+      .references(() => notes.id, {
+        onDelete: "cascade",
+      })
+      .notNull(),
+    userId: uuid("user_id")
+      .references(() => users.id, {
+        onDelete: "cascade",
+      })
+      .notNull(),
+    type: statusEnum("type").notNull(),
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "string",
+    })
+      .defaultNow()
+      .notNull(),
+  },
+  (noteCollaborators) => {
+    return {
+      noteCollaboratorsIdIndex: index("note_collaborators_id_idx").on(
+        noteCollaborators.id,
+      ),
+      noteIdIndex: index("note_collaborators_note_id_idx").on(
+        noteCollaborators.noteId,
+      ),
+      userIdIndex: index("note_collaborators_user_id_idx").on(
+        noteCollaborators.userId,
+      ),
     };
   },
 );
