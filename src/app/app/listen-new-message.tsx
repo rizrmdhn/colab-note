@@ -16,6 +16,7 @@ export default function ListenNewMessage({ user }: ListenNewMessageProps) {
       const userData =
         data.data.userId === user.id ? data.data.friends : data.data.users;
 
+      utils.users.friendMessageList.invalidate();
       utils.message.getMessages.invalidate({ friendId: userData.id });
     },
   });

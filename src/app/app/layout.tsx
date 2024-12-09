@@ -83,7 +83,7 @@ export default async function layout({
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
           {children}
           <ListenNewFriendRequest user={user} />
-          {/* <ListenNewMessage user={user} /> */}
+          <ListenNewMessage user={user} />
         </div>
       </SidebarInset>
     </SidebarProvider>
