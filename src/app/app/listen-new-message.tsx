@@ -11,8 +11,7 @@ export default function ListenNewMessage({}: ListenNewMessageProps) {
   const utils = api.useUtils();
 
   api.message.subscribeToAllMessages.useSubscription(undefined, {
-    onData: (data) => {
-      console.log("New message received", data);
+    onData: () => {
       utils.users.friendMessageList.invalidate();
       utils.message.getMessages.invalidate();
     },
