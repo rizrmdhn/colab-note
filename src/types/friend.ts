@@ -14,4 +14,5 @@ export type FriendWithDetails = {
   latestMessage: OnlyMessage | null;
   users: Users; // The user's details
   friends: Users;
+  unreadCount: number;
 };

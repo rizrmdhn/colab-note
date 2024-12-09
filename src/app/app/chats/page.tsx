@@ -1,11 +1,13 @@
 "use client";
 
-import FriendCard from "@/components/friend-card";
+import MessageCard from "@/components/message-card";
 import { api } from "@/trpc/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback } from "react";
 
 export default function NotePage() {
+  const utils = api.useUtils();
+
   const [users] = api.users.friendMessageList.useSuspenseQuery();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -20,15 +22,17 @@ export default function NotePage() {
           ? "/app/chats"
           : `/app/chats?userId=${targetUserId}`,
       );
+
+      utils.users.friendMessageList.invalidate();
     },
-    [router, searchParams, users.userId],
+    [router, searchParams, users.userId, utils.users.friendMessageList],
   );
 
   return (
     <Suspense fallback={<div>Loading...</div>}>
       {users.list.length > 0 ? (
         users.list.map((user) => (
-          <FriendCard
+          <MessageCard
             key={user.id}
             user={
               user.friendId === users.userId
@@ -37,7 +41,9 @@ export default function NotePage() {
                   ? user.friends
                   : user.users
             }
-            interactive
+            isActive={user.friendId === searchParams.get("userId")}
+            message={user.latestMessage?.message ?? ""}
+            count={user.unreadCount}
             onClick={() => handleFriendClick(user.userId, user.friendId)}
           />
         ))

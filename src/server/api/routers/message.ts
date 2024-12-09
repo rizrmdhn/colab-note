@@ -10,6 +10,7 @@ import {
   getMessageByIdOnly,
   getMessageFullById,
   updateMessage,
+  updateMessageReadStatus,
 } from "@/server/queries/messages.queries";
 import type { Message } from "@/types/messages";
 
@@ -41,6 +42,13 @@ export const messageRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input: { friendId } }) => {
       const messages = await getAllMessages(ctx.session.userId, friendId, null);
+
+      // update the unread status of the messages
+      for (const message of messages) {
+        if (message.userId === friendId) {
+          await updateMessageReadStatus(ctx.session.userId, message.id);
+        }
+      }
 
       return messages;
     }),

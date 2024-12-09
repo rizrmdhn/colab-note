@@ -201,6 +201,7 @@ export const messages = createTable(
       })
       .notNull(),
     message: text("message").notNull(),
+    isRead: boolean("is_read").notNull().default(false),
     isUpdated: boolean("is_updated").notNull().default(false),
     isDeleted: boolean("is_deleted").notNull().default(false),
     createdAt: timestamp("created_at", {

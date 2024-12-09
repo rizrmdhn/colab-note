@@ -5,7 +5,7 @@ import {
   type updateMessageSchema,
   type createMessageSchema,
 } from "@/schema/message";
-import { and, asc, eq, gt, or } from "drizzle-orm";
+import { and, asc, count, eq, gt, or } from "drizzle-orm";
 import { db } from "../db";
 import { messages } from "../db/schema";
 import { getFriendsByFriendIdOrUserId } from "./friends.queries";
@@ -80,6 +80,24 @@ export const getMessageFullById = async (userId: string, id: string) => {
   return message;
 };
 
+export const countUnreadMessages = async (userId: string, friendId: string) => {
+  const [unreadMessages] = await db
+    .select({
+      count: count(messages.isRead),
+    })
+    .from(messages)
+    .where(
+      and(
+        eq(messages.userId, friendId),
+        eq(messages.friendId, userId),
+        eq(messages.isRead, false),
+      ),
+    )
+    .execute();
+
+  return unreadMessages ? unreadMessages.count : 0;
+};
+
 export const createMessage = async (
   userId: string,
   data: z.input<typeof createMessageSchema>,
@@ -138,6 +156,31 @@ export const updateMessage = async (
         ...data,
         isUpdated: true,
         updatedAt: new Date().toISOString(),
+      })
+      .where(eq(messages.id, id))
+      .returning()
+      .execute();
+
+    if (!updatedMessage) {
+      throw new Error("Message not updated");
+    }
+
+    return updatedMessage;
+  });
+};
+
+export const updateMessageReadStatus = async (userId: string, id: string) => {
+  return await db.transaction(async (trx) => {
+    const message = await getMessageById(userId, id);
+
+    if (!message) {
+      throw new Error("Message not found");
+    }
+
+    const [updatedMessage] = await trx
+      .update(messages)
+      .set({
+        isRead: true,
       })
       .where(eq(messages.id, id))
       .returning()

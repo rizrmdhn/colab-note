@@ -5,6 +5,7 @@ import { db } from "../db";
 import { friends, messages, users } from "../db/schema";
 import { getBlockedByBlockedId } from "./blocked.queries";
 import type { FriendWithDetails } from "@/types/friend";
+import { countUnreadMessages } from "./messages.queries";
 
 export const getFriendsByUserId = async (userId: string) => {
   const friendsList = await db.query.friends.findMany({
@@ -22,6 +23,7 @@ export const getFriendsByUserIdOrderByMessageCreatedAt = async (
   userId: string,
 ) => {
   const friendData = aliasedTable(users, "friendData");
+  const readedMessages = aliasedTable(messages, "readedMessages");
 
   const friendsWithMessages = await db
     .select({
@@ -29,6 +31,7 @@ export const getFriendsByUserIdOrderByMessageCreatedAt = async (
       users: users,
       friends: friendData,
       latestMessage: messages,
+      readedMessages: readedMessages,
     })
     .from(friends)
     .innerJoin(users, eq(users.id, userId))
@@ -60,6 +63,14 @@ export const getFriendsByUserIdOrderByMessageCreatedAt = async (
         ),
       ),
     )
+    .innerJoin(
+      readedMessages,
+      and(
+        eq(readedMessages.userId, userId),
+        eq(readedMessages.friendId, friendData.id),
+        eq(readedMessages.id, messages.id),
+      ),
+    )
     .where(or(eq(friends.userId, userId), eq(friends.friendId, userId)))
     .orderBy(desc(messages.createdAt));
 
@@ -78,6 +89,8 @@ export const getFriendsByUserIdOrderByMessageCreatedAt = async (
       friendId &&
       !friendsWithDetails.some((friend) => friend.friendId === friendId)
     ) {
+      const unreadCount = await countUnreadMessages(userId, friendId);
+
       friendsWithDetails.push({
         id: row.friend.id,
         // Always set current user as userId
@@ -88,6 +101,7 @@ export const getFriendsByUserIdOrderByMessageCreatedAt = async (
         latestMessage: row.latestMessage,
         users: row.users,
         friends: row.friends,
+        unreadCount,
       });
     }
   }
