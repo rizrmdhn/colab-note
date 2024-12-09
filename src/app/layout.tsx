@@ -17,7 +17,8 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({
   children,
-}: Readonly<{ children: React.ReactNode }>) {
+  sheet,
+}: Readonly<{ children: React.ReactNode; sheet: React.ReactNode }>) {
   return (
     <html
       lang="en"
@@ -36,6 +37,8 @@ export default async function RootLayout({
         <TRPCReactProvider>
           <Providers>
             {children}
+            {sheet}
+            <div id="sheet-root" />
             <Toaster position="bottom-right" richColors />
           </Providers>
         </TRPCReactProvider>

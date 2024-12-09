@@ -5,6 +5,11 @@ import {
   SONNER_DEFAULT_TOAST_DURATION,
   SONNER_WARNING_TOAST_DURATION,
 } from "./constants";
+import {
+  differenceInBusinessDays,
+  differenceInMinutes,
+  format,
+} from "date-fns";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -51,3 +56,16 @@ export const globalWarningToast = (message: string) => {
     duration: SONNER_WARNING_TOAST_DURATION,
   });
 };
+
+export function getDateSeparator(date: Date): string {
+  const now = new Date();
+  const diffDays = differenceInBusinessDays(now, date);
+  const diffMinutes = differenceInMinutes(now, date);
+
+  if (diffMinutes < 60) return "Just now";
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return `${diffDays} days ago`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+  return format(date, "d MMMM yyyy HH:mm");
+}

@@ -7,3 +7,18 @@ export const AVALIABLE_COLLABORATOR_TYPE = [
   "editor",
   "viewer",
 ] as const;
+
+export const DEFAULT_EDITOR_VALUES = [
+  {
+    children: [{ text: "Welcome to your new note!" }],
+    type: "h1",
+  },
+  {
+    children: [
+      { text: "This is a collaborative note. " },
+      { bold: true, text: "Invite collaborators" },
+      { text: " to work together in real-time." },
+    ],
+    type: "p",
+  },
+];
