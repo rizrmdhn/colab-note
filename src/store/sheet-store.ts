@@ -5,7 +5,7 @@ interface SheetProps {
   setOpen: (open: boolean) => void;
 }
 
-export const sheetStore = create<SheetProps>((set) => ({
+export const useSheetStore = create<SheetProps>((set) => ({
   open: true,
   setOpen: (open) => set({ open }),
 }));

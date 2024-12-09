@@ -1,11 +1,11 @@
 import { create } from "zustand";
 
-interface FriendRequestStore {
+interface useFriendRequestStore {
   lastEventId: false | null | string;
   setLastEventId: (lastEventId: false | null | string) => void;
 }
 
-export const friendRequestStore = create<FriendRequestStore>((set) => ({
+export const useFriendRequestStore = create<useFriendRequestStore>((set) => ({
   lastEventId: false,
   setLastEventId: (lastEventId) => set({ lastEventId }),
 }));

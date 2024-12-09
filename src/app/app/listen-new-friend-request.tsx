@@ -4,7 +4,7 @@ import { globalInfoToast } from "@/lib/utils";
 import { api } from "@/trpc/react";
 import { skipToken } from "@tanstack/react-query";
 import type { Users } from "@/types/users";
-import { friendRequestStore } from "@/store/friend-request.store";
+import { useFriendRequestStore } from "@/store/friend-request.store";
 
 interface ListenNewFriendRequestProps {
   user: Users;
@@ -13,7 +13,7 @@ interface ListenNewFriendRequestProps {
 export default function ListenNewFriendRequest({
   user,
 }: ListenNewFriendRequestProps) {
-  const lastEventId = friendRequestStore((state) => state.lastEventId);
+  const lastEventId = useFriendRequestStore((state) => state.lastEventId);
 
   const utils = api.useUtils();
 

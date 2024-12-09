@@ -3,13 +3,13 @@
 import { DEFAULT_EDITOR_VALUES } from "@/lib/constants";
 import { globalErrorToast, globalSuccessToast } from "@/lib/utils";
 import { createNoteSchema } from "@/schema/notes";
-import { sheetStore } from "@/store/sheet-store";
+import { useSheetStore } from "@/store/sheet-store";
 import { api } from "@/trpc/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
-import { useStore } from "zustand";
+
 import { ScrollArea, ScrollBar } from "./ui/scroll-area";
 import {
   Form,
@@ -28,7 +28,7 @@ export default function CreateNewNoteForm() {
 
   const router = useRouter();
 
-  const setOpen = useStore(sheetStore, (state) => state.setOpen);
+  const setOpen = useSheetStore((state) => state.setOpen);
 
   const createNewNoteMutation = api.notes.create.useMutation({
     onSuccess: () => {

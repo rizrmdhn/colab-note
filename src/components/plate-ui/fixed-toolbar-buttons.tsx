@@ -16,7 +16,6 @@ import {
 } from "@udecode/plate-font/react";
 import { HighlightPlugin } from "@udecode/plate-highlight/react";
 import { ListStyleType } from "@udecode/plate-indent-list";
-import { ImagePlugin } from "@udecode/plate-media/react";
 import {
   ArrowUpToLineIcon,
   BaselineIcon,
@@ -44,7 +43,6 @@ import { InsertDropdownMenu } from "./insert-dropdown-menu";
 import { LineHeightDropdownMenu } from "./line-height-dropdown-menu";
 import { LinkToolbarButton } from "./link-toolbar-button";
 import { MarkToolbarButton } from "./mark-toolbar-button";
-import { MediaToolbarButton } from "./media-toolbar-button";
 import { ModeDropdownMenu } from "./mode-dropdown-menu";
 import { OutdentToolbarButton } from "./outdent-toolbar-button";
 import { TableDropdownMenu } from "./table-dropdown-menu";

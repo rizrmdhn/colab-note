@@ -21,6 +21,10 @@ export const noteRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const note = await getNoteById(ctx.session.userId, input.id);
 
+      if (!note) {
+        throw new Error("Note not found");
+      }
+
       return note;
     }),
 
