@@ -28,7 +28,7 @@ export function PlateEditor({ noteId }: { noteId: string }) {
   return (
     <DndProvider backend={HTML5Backend}>
       <Plate editor={editor}>
-        <EditorContainer>
+        <EditorContainer className="caret-black dark:caret-white">
           <Editor variant="demo" />
         </EditorContainer>
 
