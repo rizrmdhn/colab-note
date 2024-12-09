@@ -6,6 +6,7 @@ import { type Metadata } from "next";
 import { TRPCReactProvider } from "@/trpc/react";
 import { Toaster } from "@/components/ui/sonner";
 import Providers from "./provider";
+import { env } from "@/env";
 
 export const metadata: Metadata = {
   title: "Login - Collaborative Note Taking",
@@ -24,8 +25,12 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <script src="https://unpkg.com/react-scan/dist/auto.global.js" async />
-        {/* rest of your scripts go under */}
+        {env.NODE_ENV === "development" && (
+          <script
+            src="https://unpkg.com/react-scan/dist/auto.global.js"
+            async
+          />
+        )}
       </head>
       <body>
         <TRPCReactProvider>
