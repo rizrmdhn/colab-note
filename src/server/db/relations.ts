@@ -68,3 +68,13 @@ export const noteRelations = relations(notes, ({ one, many }) => ({
   }),
   collaborator: many(noteCollaborators),
 }));
+
+export const noteCollaboratorRelations = relations(
+  noteCollaborators,
+  ({ one }) => ({
+    users: one(users, {
+      fields: [noteCollaborators.userId],
+      references: [users.id],
+    }),
+  }),
+);
