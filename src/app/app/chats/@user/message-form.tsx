@@ -4,6 +4,8 @@ import MessageList from "./message-list";
 import { Button } from "@/components/ui/button";
 import { globalErrorToast, globalSuccessToast } from "@/lib/utils";
 import { LoaderCircle } from "lucide-react";
+import { messageRequestStore } from "@/store/message.store";
+import { useStore } from "zustand";
 
 export default function MessageForm({
   userId,
@@ -15,13 +17,21 @@ export default function MessageForm({
   const [messageId, setMessageId] = useState("");
   const [message, setMessage] = useState("");
 
+  const setLastEventId = useStore(
+    messageRequestStore,
+    (state) => state.setLastEventId,
+  );
+
   const utils = api.useUtils();
 
   const sendMessageMutation = api.message.sendMessage.useMutation({
-    onSuccess: () => {
+    onSuccess: (data) => {
       globalSuccessToast("Message sent successfully");
 
       setMessage("");
+
+      // Set last event id
+      setLastEventId(data.id);
       utils.message.getMessages.invalidate();
     },
     onError: (error) => {
@@ -35,6 +45,7 @@ export default function MessageForm({
 
       setMessage("");
       setMessageId("");
+
       utils.message.getMessages.invalidate();
     },
     onError: (error) => {
@@ -43,7 +54,7 @@ export default function MessageForm({
   });
 
   return (
-    <div className="flex h-96 flex-1 flex-col">
+    <div className="flex h-full flex-col">
       <MessageList
         userId={userId}
         friendId={friendId}
@@ -53,7 +64,7 @@ export default function MessageForm({
         }}
       />
       {messageId ? (
-        <div className="p-4">
+        <div className="shrink-0 p-4">
           <form>
             <div className="grid gap-4">
               <textarea
@@ -97,7 +108,7 @@ export default function MessageForm({
           </form>
         </div>
       ) : (
-        <div className="p-4">
+        <div className="shrink-0 p-4">
           <form>
             <div className="grid gap-4">
               <textarea

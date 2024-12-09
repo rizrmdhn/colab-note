@@ -53,33 +53,50 @@ export const messageRouter = createTRPCRouter({
       return messages;
     }),
 
-  subscribeToAllMessages: protectedProcedure.subscription(async function* ({
-    ctx,
-    signal,
-  }) {
-    const iterable = ee.toIterable("sendMessage", {
-      signal: signal,
-    });
+  subscribeToAllMessages: protectedProcedure
+    .input(
+      z.object({
+        lastEventId: z.string().nullish(),
+      }),
+    )
+    .subscription(async function* ({ ctx, signal, input }) {
+      const iterable = ee.toIterable("sendMessage", {
+        signal: signal,
+      });
 
-    // First, yield any messages that were sent before the subscription
-    const messages = await getAllMessagesByUserId(ctx.session.userId);
+      // Fetch the last message createdAt based on the last event id
+      const lastMessageCreatedAt = await (async () => {
+        const lastEventId = input.lastEventId;
+        if (!lastEventId) return null;
 
-    function* maybeYield(message: Message) {
-      if (ctx.session.userId === message.userId) {
-        return;
+        const message = await getMessageByIdOnly(lastEventId);
+
+        return message?.createdAt ?? null;
+      })();
+
+      // First, yield any messages that were sent before the subscription
+      const messages = await getAllMessagesByUserId(ctx.session.userId);
+
+      function* maybeYield(message: Message) {
+        if (ctx.session.userId === message.userId) {
+          return;
+        }
+
+        if (lastMessageCreatedAt && message.createdAt <= lastMessageCreatedAt) {
+          return;
+        }
+
+        yield tracked(message.id, message);
       }
 
-      yield tracked(message.id, message);
-    }
+      for (const message of messages) {
+        yield* maybeYield(message);
+      }
 
-    for (const message of messages) {
-      yield* maybeYield(message);
-    }
-
-    for await (const [, message] of iterable) {
-      yield* maybeYield(message);
-    }
-  }),
+      for await (const [, message] of iterable) {
+        yield* maybeYield(message);
+      }
+    }),
 
   subscribeToMessages: protectedProcedure
     .input(

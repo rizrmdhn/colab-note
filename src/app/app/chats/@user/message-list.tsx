@@ -65,14 +65,11 @@ export default function MessageList({
   }, [messages]);
 
   return (
-    <div
-      ref={listRef}
-      className="h-96 flex-1 overflow-y-auto whitespace-pre-wrap p-4 text-sm"
-    >
+    <div ref={listRef} className="h-[calc(100vh-330px)] overflow-y-auto p-4">
       {messages.map((message) => (
         <div
           key={message.id}
-          className={`mb-2 flex flex-col ${
+          className={`flex flex-col ${
             message.userId === userId ? "items-end" : "items-start"
           }`}
         >
@@ -85,51 +82,16 @@ export default function MessageList({
               {message.updatedAt && message.updatedAt !== message.createdAt && (
                 <span className="text-xs italic text-gray-400"> (edited)</span>
               )}
-              {/* {message.isRead && (
-                <span className="text-xs italic text-gray-400"> (read)</span>
-              )} */}
             </span>
           </div>
-          <div className="rounded-lg bg-gray-100 p-2">
-            <p className="text-sm text-black">{message.message}</p>
+          <div className="max-w-[80%] rounded-lg bg-gray-100 p-2">
+            <p className="break-words text-sm text-black">{message.message}</p>
           </div>
-          {/* {message.userId === userId && !catatan.isRead && (
-            <div className="flex gap-4 text-xs text-gray-600">
-              <button
-                className="hover:underline"
-                onClick={() => {
-                  mutate({
-                    catatanHarianUsulanId: catatan.catatanHarianUsulanId,
-                  });
-                }}
-                disabled={status === "pending"}
-              >
-                Mark as read
-              </button>
-            </div>
-          )}
-          {catatan.userId === userId && catatan.isRead && (
-            <div className="flex gap-4 text-xs text-gray-600">
-              <button
-                className="hover:underline"
-                onClick={() => {
-                  markAsUnread({
-                    catatanHarianUsulanId: catatan.catatanHarianUsulanId,
-                  });
-                }}
-                disabled={isPending}
-              >
-                Mark as unread
-              </button>
-            </div>
-          )} */}
           {message.userId === userId && (
-            <div className="flex gap-4 text-xs text-gray-600">
+            <div className="mt-1 flex gap-4 text-xs text-gray-600">
               <button
                 className="hover:underline"
-                onClick={() => {
-                  onUpdate(message.id, message.message);
-                }}
+                onClick={() => onUpdate(message.id, message.message)}
               >
                 Update
               </button>
@@ -137,9 +99,8 @@ export default function MessageList({
           )}
         </div>
       ))}
-
       {messages.length === 0 && (
-        <div className="flex flex-1 flex-col text-center text-gray-500">
+        <div className="flex h-full items-center justify-center text-gray-500">
           No messages yet
         </div>
       )}

@@ -17,9 +17,6 @@ export default function Message({ user }: { user: Users }) {
     );
   }
 
-  return (
-    <div className="flex h-full flex-1">
-      <MessageForm userId={user.id} friendId={userId} />
-    </div>
-  );
+  // this should fill the parent height
+  return <MessageForm userId={user.id} friendId={userId} />;
 }
