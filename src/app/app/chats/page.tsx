@@ -23,9 +23,16 @@ export default function NotePage() {
           : `/app/chats?userId=${targetUserId}`,
       );
 
+      utils.message.getMessages.refetch({ friendId });
       utils.users.friendMessageList.invalidate();
     },
-    [router, searchParams, users.userId, utils.users.friendMessageList],
+    [
+      router,
+      searchParams,
+      users.userId,
+      utils.message.getMessages,
+      utils.users.friendMessageList,
+    ],
   );
 
   return (

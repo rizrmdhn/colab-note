@@ -5,7 +5,7 @@ import {
   type updateMessageSchema,
   type createMessageSchema,
 } from "@/schema/message";
-import { and, asc, count, eq, gt, or } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, or } from "drizzle-orm";
 import { db } from "../db";
 import { messages } from "../db/schema";
 import { getFriendsByFriendIdOrUserId } from "./friends.queries";
@@ -60,6 +60,15 @@ export const getMessageById = async (userId: string, id: string) => {
 export const getMessageByIdOnly = async (id: string) => {
   const message = await db.query.messages.findFirst({
     where: eq(messages.id, id),
+  });
+
+  return message;
+};
+
+export const getLatestMessage = async (userId: string) => {
+  const message = await db.query.messages.findFirst({
+    where: or(eq(messages.userId, userId), eq(messages.friendId, userId)),
+    orderBy: desc(messages.createdAt),
   });
 
   return message;

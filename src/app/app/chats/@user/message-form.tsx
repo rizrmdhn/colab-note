@@ -4,8 +4,6 @@ import MessageList from "./message-list";
 import { Button } from "@/components/ui/button";
 import { globalErrorToast, globalSuccessToast } from "@/lib/utils";
 import { LoaderCircle } from "lucide-react";
-import { messageRequestStore } from "@/store/message.store";
-import { useStore } from "zustand";
 
 export default function MessageForm({
   userId,
@@ -17,21 +15,14 @@ export default function MessageForm({
   const [messageId, setMessageId] = useState("");
   const [message, setMessage] = useState("");
 
-  const setLastEventId = useStore(
-    messageRequestStore,
-    (state) => state.setLastEventId,
-  );
-
   const utils = api.useUtils();
 
   const sendMessageMutation = api.message.sendMessage.useMutation({
-    onSuccess: (data) => {
+    onSuccess: () => {
       globalSuccessToast("Message sent successfully");
 
       setMessage("");
 
-      // Set last event id
-      setLastEventId(data.id);
       utils.message.getMessages.invalidate();
     },
     onError: (error) => {
