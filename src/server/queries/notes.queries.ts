@@ -52,6 +52,36 @@ export const createNotes = async (
   });
 };
 
+export const updateNotesTitle = async (
+  userId: string,
+  id: string,
+  title: string,
+) => {
+  return await db.transaction(async (trx) => {
+    const isNoteExist = await getNoteById(userId, id);
+
+    if (!isNoteExist) {
+      throw new Error("Note not found");
+    }
+
+    const [note] = await trx
+      .update(notes)
+      .set({
+        title,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(and(eq(notes.userId, userId), eq(notes.id, id)))
+      .returning()
+      .execute();
+
+    if (!note) {
+      throw new Error("Failed to update note title");
+    }
+
+    return note;
+  });
+};
+
 export const updateNote = async (
   userId: string,
   id: string,

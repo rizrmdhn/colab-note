@@ -7,6 +7,7 @@ import {
   getAllNotes,
   getNoteById,
   updateNote,
+  updateNotesTitle,
 } from "@/server/queries/notes.queries";
 
 export const noteRouter = createTRPCRouter({
@@ -32,6 +33,18 @@ export const noteRouter = createTRPCRouter({
     .input(createNoteSchema)
     .mutation(async ({ input, ctx }) => {
       const note = await createNotes(ctx.session.userId, input);
+
+      return note;
+    }),
+
+  updateTitle: protectedProcedure
+    .input(z.object({ id: z.string(), title: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      const note = await updateNotesTitle(
+        ctx.session.userId,
+        input.id,
+        input.title,
+      );
 
       return note;
     }),
