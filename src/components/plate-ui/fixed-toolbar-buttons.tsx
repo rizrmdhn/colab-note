@@ -50,6 +50,7 @@ import { ToggleToolbarButton } from "./toggle-toolbar-button";
 import { ToolbarGroup } from "./toolbar";
 import { TurnIntoDropdownMenu } from "./turn-into-dropdown-menu";
 import { SaveToolbarButton } from "./save-toolbar-button";
+import { CollaboratorToolbarButton } from "./collaborator-toolbar-button";
 
 export function FixedToolbarButtons() {
   const readOnly = useEditorReadOnly();
@@ -135,11 +136,6 @@ export function FixedToolbarButtons() {
           </ToolbarGroup>
 
           <ToolbarGroup>
-            {/* <MediaToolbarButton nodeType={ImagePlugin.key} /> */}
-            {/* <MediaToolbarButton nodeType={FilePlugin.key} /> */}
-          </ToolbarGroup>
-
-          <ToolbarGroup>
             <LineHeightDropdownMenu />
             <OutdentToolbarButton />
             <IndentToolbarButton />
@@ -147,6 +143,10 @@ export function FixedToolbarButtons() {
 
           <ToolbarGroup>
             <MoreDropdownMenu />
+          </ToolbarGroup>
+
+          <ToolbarGroup>
+            <CollaboratorToolbarButton />
           </ToolbarGroup>
         </>
       )}

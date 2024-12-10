@@ -32,7 +32,7 @@ export default function CreateNewNoteForm() {
 
   const createNewNoteMutation = api.notes.create.useMutation({
     onSuccess: () => {
-      globalSuccessToast("Ruang Lingkup successfully created");
+      globalSuccessToast("Note successfully created");
 
       setOpen(false);
 

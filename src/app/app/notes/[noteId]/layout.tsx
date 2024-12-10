@@ -19,6 +19,7 @@ export default async function layout({
   const noteId = (await params).noteId;
 
   api.notes.getNoteDetails.prefetch({ id: noteId });
+  api.users.friendList.prefetch();
 
   return <HydrateClient>{children}</HydrateClient>;
 }
