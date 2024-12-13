@@ -6,6 +6,7 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   index,
+  jsonb,
   pgEnum,
   pgTableCreator,
   text,
@@ -14,6 +15,7 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
+import type { Node } from "slate";
 import { v7 as uuidv7 } from "uuid";
 
 /**
@@ -55,6 +57,13 @@ export const users = createTable(
       emailIndex: index("email_idx").on(users.email),
       usernameIndex: index("username_idx").on(users.username),
       usernameUnique: unique("username_unique").on(users.username),
+      searchUserIndex: index("search_user_idx").using(
+        "gin",
+        sql`(
+        setweight(to_tsvector('english', ${users.name}), 'A') ||
+        setweight(to_tsvector('english', ${users.username}), 'B')
+        )`,
+      ),
     };
   },
 );
@@ -248,7 +257,7 @@ export const notes = createTable(
       })
       .notNull(),
     title: varchar("title", { length: 255 }).notNull(),
-    content: text("content").notNull(),
+    content: jsonb("content").$type<Node[]>().notNull(),
     isDeleted: boolean("is_deleted").notNull().default(false),
     createdAt: timestamp("created_at", {
       withTimezone: true,

@@ -2,23 +2,51 @@ import "server-only";
 
 import { type z } from "zod";
 import { type updateNoteSchema, type createNoteSchema } from "@/schema/notes";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, or } from "drizzle-orm";
 import { db } from "../db";
-import { notes } from "../db/schema";
+import { noteCollaborators, notes } from "../db/schema";
 import { createNoteCollaborator } from "./note-collaborators.queries";
 
 export const getAllNotes = async (userId: string) => {
   const notesList = await db.query.notes.findMany({
     where: eq(notes.userId, userId),
+    columns: {
+      id: true,
+      createdAt: true,
+      updatedAt: true,
+      userId: true,
+      isDeleted: true,
+      title: true,
+      content: false,
+    },
     orderBy: asc(notes.createdAt),
   });
 
   return notesList;
 };
 
-export const getNoteById = async (userId: string, id: string) => {
+export const getAllNotesWithCollaborators = async (userId: string) => {
+  const notesList = await db
+    .selectDistinct({
+      id: notes.id,
+      createdAt: notes.createdAt,
+      updatedAt: notes.updatedAt,
+      userId: notes.userId,
+      isDeleted: notes.isDeleted,
+      title: notes.title,
+      content: notes.content,
+    })
+    .from(notes)
+    .leftJoin(noteCollaborators, eq(noteCollaborators.noteId, notes.id))
+    .where(or(eq(notes.userId, userId), eq(noteCollaborators.userId, userId)))
+    .execute();
+
+  return notesList;
+};
+
+export const getNoteById = async (id: string) => {
   const note = await db.query.notes.findFirst({
-    where: and(eq(notes.userId, userId), eq(notes.id, id)),
+    where: eq(notes.id, id),
   });
 
   return note;
@@ -58,7 +86,7 @@ export const updateNotesTitle = async (
   title: string,
 ) => {
   return await db.transaction(async (trx) => {
-    const isNoteExist = await getNoteById(userId, id);
+    const isNoteExist = await getNoteById(id);
 
     if (!isNoteExist) {
       throw new Error("Note not found");
@@ -88,7 +116,7 @@ export const updateNote = async (
   data: z.input<typeof updateNoteSchema>,
 ) => {
   return await db.transaction(async (trx) => {
-    const isNoteExist = await getNoteById(userId, id);
+    const isNoteExist = await getNoteById(id);
 
     if (!isNoteExist) {
       throw new Error("Note not found");
@@ -114,7 +142,7 @@ export const updateNote = async (
 
 export const deleteNote = async (userId: string, id: string) => {
   return await db.transaction(async (trx) => {
-    const isNoteExist = await getNoteById(userId, id);
+    const isNoteExist = await getNoteById(id);
 
     if (!isNoteExist) {
       throw new Error("Note not found");

@@ -1,5 +1,4 @@
 import { withProps } from "@udecode/cn";
-import { AIPlugin } from "@udecode/plate-ai/react";
 import {
   BoldPlugin,
   CodePlugin,
@@ -52,11 +51,9 @@ import {
 } from "@udecode/plate-table/react";
 import { TogglePlugin } from "@udecode/plate-toggle/react";
 
-import { copilotPlugins } from "@/components/editor/plugins/copilot-plugins";
 import { editorPlugins } from "@/components/editor/plugins/editor-plugins";
 import { FixedToolbarPlugin } from "@/components/editor/plugins/fixed-toolbar-plugin";
 import { FloatingToolbarPlugin } from "@/components/editor/plugins/floating-toolbar-plugin";
-import { AILeaf } from "@/components/plate-ui/ai-leaf";
 import { BlockquoteElement } from "@/components/plate-ui/blockquote-element";
 import { CodeBlockElement } from "@/components/plate-ui/code-block-element";
 import { CodeLeaf } from "@/components/plate-ui/code-leaf";
@@ -94,11 +91,32 @@ import { TocElement } from "@/components/plate-ui/toc-element";
 import { ToggleElement } from "@/components/plate-ui/toggle-element";
 import { withDraggables } from "@/components/plate-ui/with-draggables";
 import { DEFAULT_EDITOR_VALUES } from "@/lib/constants";
+import { useNoteStore } from "@/store/notes.store";
+import { useMemo } from "react";
+import type { TDescendant } from "@udecode/plate-common";
 
-export const useCreateEditor = (value: any = DEFAULT_EDITOR_VALUES) => {
-  return usePlateEditor({
-    override: {
-      components: withDraggables(
+export const useCreateEditor = () => {
+  const noteContent = useNoteStore((state) => state.noteContent);
+
+  // Parse note content safely with error handling
+  const parsedContent = useMemo(() => {
+    if (!noteContent) return DEFAULT_EDITOR_VALUES;
+    try {
+      return noteContent as TDescendant[];
+    } catch (error) {
+      console.error("Failed to parse note content:", error);
+      return DEFAULT_EDITOR_VALUES;
+    }
+  }, [noteContent]);
+
+  const plugins = useMemo(
+    () => [...editorPlugins, FixedToolbarPlugin, FloatingToolbarPlugin],
+    [],
+  );
+
+  const components = useMemo(
+    () =>
+      withDraggables(
         withPlaceholders({
           [AudioPlugin.key]: MediaAudioElement,
           [BlockquotePlugin.key]: BlockquoteElement,
@@ -145,8 +163,17 @@ export const useCreateEditor = (value: any = DEFAULT_EDITOR_VALUES) => {
           [VideoPlugin.key]: MediaVideoElement,
         }),
       ),
+    [],
+  );
+
+  // Create base editor with plugins and components
+  const editor = usePlateEditor({
+    override: {
+      components,
     },
-    plugins: [...editorPlugins, FixedToolbarPlugin, FloatingToolbarPlugin],
-    value: value ? JSON.parse(value) : DEFAULT_EDITOR_VALUES,
+    plugins,
+    value: parsedContent as any,
   });
+
+  return editor;
 };
