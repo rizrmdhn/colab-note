@@ -9,6 +9,8 @@ import React, { Suspense } from "react";
 
 export default function FriendPage() {
   const utils = api.useUtils();
+  const [isAccepting, setIsAccepting] = React.useState(new Set<string>());
+  const [isRejecting, setIsRejecting] = React.useState(new Set<string>());
   const [requestList] = api.users.requestList.useSuspenseQuery();
 
   const lastEventId = useFriendRequestStore((state) => state.lastEventId);
@@ -21,24 +23,54 @@ export default function FriendPage() {
   }
 
   const acceptRequestMutation = api.users.acceptRequest.useMutation({
-    onSuccess: () => {
+    onMutate: ({ requestId }) => {
+      setIsAccepting((prev) => new Set(prev).add(requestId));
+    },
+    onSuccess: ({ id }) => {
       globalSuccessToast("Friend request accepted.");
+
+      setIsAccepting((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
 
       utils.users.friendList.invalidate();
       utils.users.requestList.invalidate();
     },
-    onError: (error) => {
+    onError: (error, { requestId }) => {
+      setIsAccepting((prev) => {
+        const next = new Set(prev);
+        next.delete(requestId);
+        return next;
+      });
+
       globalErrorToast(error.message);
     },
   });
 
   const rejectRequestMutation = api.users.rejectRequest.useMutation({
-    onSuccess: () => {
+    onMutate: ({ requestId }) => {
+      setIsRejecting((prev) => new Set(prev).add(requestId));
+    },
+    onSuccess: ({ id }) => {
       globalSuccessToast("Friend request rejected.");
+
+      setIsRejecting((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
 
       utils.users.requestList.invalidate();
     },
-    onError: (error) => {
+    onError: (error, { requestId }) => {
+      setIsRejecting((prev) => {
+        const next = new Set(prev);
+        next.delete(requestId);
+        return next;
+      });
+
       globalErrorToast(error.message);
     },
   });
@@ -63,7 +95,7 @@ export default function FriendPage() {
                           requestId: data.id,
                         });
                       }}
-                      disabled={rejectRequestMutation.isPending}
+                      disabled={isRejecting.has(data.id)}
                       className="bg-red-500 text-white hover:bg-red-600 hover:text-white"
                     >
                       Reject
@@ -74,7 +106,7 @@ export default function FriendPage() {
                           requestId: data.id,
                         });
                       }}
-                      disabled={acceptRequestMutation.isPending}
+                      disabled={isAccepting.has(data.id)}
                     >
                       Accept
                     </Button>
