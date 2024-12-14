@@ -2,6 +2,7 @@
 
 import FriendCard from "@/components/friend-card";
 import { Button } from "@/components/ui/button";
+import { UserListSkeleton } from "@/components/user-list-skeleton";
 import { globalErrorToast, globalSuccessToast } from "@/lib/utils";
 import { useFriendRequestStore } from "@/store/friend-request.store";
 import { api } from "@/trpc/react";
@@ -13,7 +14,7 @@ export default function FriendPage() {
   const [isAccepting, setIsAccepting] = React.useState(new Set<string>());
   const [isRejecting, setIsRejecting] = React.useState(new Set<string>());
   const [isCanceling, setIsCanceling] = React.useState(new Set<string>());
-  const [requestList] = api.users.requestList.useSuspenseQuery();
+  const [requestList, status] = api.users.requestList.useSuspenseQuery();
   const [me] = api.users.fetchMyDetails.useSuspenseQuery();
 
   const lastEventId = useFriendRequestStore((state) => state.lastEventId);
@@ -95,8 +96,10 @@ export default function FriendPage() {
         <h1 className="text-lg font-semibold md:text-2xl">Friends Request</h1>
       </div>
       <div className="flex flex-col flex-wrap gap-4 overflow-y-auto overflow-x-hidden p-4 lg:gap-6 lg:pb-2 lg:pl-6 lg:pr-6 lg:pt-2">
-        <Suspense fallback={<div>Loading...</div>}>
-          {requestList.length > 0 ? (
+        <Suspense fallback={<UserListSkeleton />}>
+          {status.isFetching ? (
+            <UserListSkeleton />
+          ) : requestList.length > 0 ? (
             requestList.map((data) => (
               <FriendCard
                 key={data.id}

@@ -7,8 +7,9 @@ import { api } from "@/trpc/react";
 import React, { Suspense } from "react";
 import SearchForm from "./search-form";
 import { useDebounce } from "@/hooks/use-debounce";
-import { Skeleton } from "@/components/ui/skeleton";
 import { LoaderCircle } from "lucide-react";
+import { EmptyState } from "@/components/empty-state";
+import { UserListSkeleton } from "@/components/user-list-skeleton";
 
 export default function FriendPage() {
   const utils = api.useUtils();
@@ -109,27 +110,3 @@ export default function FriendPage() {
     </section>
   );
 }
-
-const UserListSkeleton = () => (
-  <div className="space-y-4">
-    {[1, 2, 3].map((index) => (
-      <div
-        key={index}
-        className="flex items-center space-x-4 rounded-lg border p-4"
-      >
-        <Skeleton className="h-12 w-12 rounded-full" />
-        <div className="flex-1 space-y-2">
-          <Skeleton className="h-4 w-[200px]" />
-          <Skeleton className="h-4 w-[150px]" />
-        </div>
-        <Skeleton className="h-10 w-[140px]" />
-      </div>
-    ))}
-  </div>
-);
-
-const EmptyState = ({ message }: { message: string }) => (
-  <div className="flex h-64 items-center justify-center">
-    <p className="text-lg text-gray-500 dark:text-gray-400">{message}</p>
-  </div>
-);
