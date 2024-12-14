@@ -22,7 +22,6 @@ import {
 } from "@udecode/plate-common/react";
 import { DatePlugin } from "@udecode/plate-date/react";
 import { EmojiInputPlugin } from "@udecode/plate-emoji/react";
-import { ExcalidrawPlugin } from "@udecode/plate-excalidraw/react";
 import { HEADING_KEYS } from "@udecode/plate-heading";
 import { TocPlugin } from "@udecode/plate-heading/react";
 import { HighlightPlugin } from "@udecode/plate-highlight/react";
@@ -30,14 +29,7 @@ import { HorizontalRulePlugin } from "@udecode/plate-horizontal-rule/react";
 import { KbdPlugin } from "@udecode/plate-kbd/react";
 import { ColumnItemPlugin, ColumnPlugin } from "@udecode/plate-layout/react";
 import { LinkPlugin } from "@udecode/plate-link/react";
-import {
-  AudioPlugin,
-  FilePlugin,
-  ImagePlugin,
-  MediaEmbedPlugin,
-  PlaceholderPlugin,
-  VideoPlugin,
-} from "@udecode/plate-media/react";
+import { ImagePlugin } from "@udecode/plate-media/react";
 import {
   MentionInputPlugin,
   MentionPlugin,
@@ -64,18 +56,12 @@ import { ColumnGroupElement } from "@/components/plate-ui/column-group-element";
 import { CommentLeaf } from "@/components/plate-ui/comment-leaf";
 import { DateElement } from "@/components/plate-ui/date-element";
 import { EmojiInputElement } from "@/components/plate-ui/emoji-input-element";
-import { ExcalidrawElement } from "@/components/plate-ui/excalidraw-element";
 import { HeadingElement } from "@/components/plate-ui/heading-element";
 import { HighlightLeaf } from "@/components/plate-ui/highlight-leaf";
 import { HrElement } from "@/components/plate-ui/hr-element";
 import { ImageElement } from "@/components/plate-ui/image-element";
 import { KbdLeaf } from "@/components/plate-ui/kbd-leaf";
 import { LinkElement } from "@/components/plate-ui/link-element";
-import { MediaAudioElement } from "@/components/plate-ui/media-audio-element";
-import { MediaEmbedElement } from "@/components/plate-ui/media-embed-element";
-import { MediaFileElement } from "@/components/plate-ui/media-file-element";
-import { MediaPlaceholderElement } from "@/components/plate-ui/media-placeholder-element";
-import { MediaVideoElement } from "@/components/plate-ui/media-video-element";
 import { MentionElement } from "@/components/plate-ui/mention-element";
 import { MentionInputElement } from "@/components/plate-ui/mention-input-element";
 import { ParagraphElement } from "@/components/plate-ui/paragraph-element";
@@ -118,7 +104,6 @@ export const useCreateEditor = () => {
     () =>
       withDraggables(
         withPlaceholders({
-          [AudioPlugin.key]: MediaAudioElement,
           [BlockquotePlugin.key]: BlockquoteElement,
           [BoldPlugin.key]: withProps(PlateLeaf, { as: "strong" }),
           [CodeBlockPlugin.key]: CodeBlockElement,
@@ -130,8 +115,6 @@ export const useCreateEditor = () => {
           [CommentsPlugin.key]: CommentLeaf,
           [DatePlugin.key]: DateElement,
           [EmojiInputPlugin.key]: EmojiInputElement,
-          [ExcalidrawPlugin.key]: ExcalidrawElement,
-          [FilePlugin.key]: MediaFileElement,
           [HEADING_KEYS.h1]: withProps(HeadingElement, { variant: "h1" }),
           [HEADING_KEYS.h2]: withProps(HeadingElement, { variant: "h2" }),
           [HEADING_KEYS.h3]: withProps(HeadingElement, { variant: "h3" }),
@@ -144,11 +127,9 @@ export const useCreateEditor = () => {
           [ItalicPlugin.key]: withProps(PlateLeaf, { as: "em" }),
           [KbdPlugin.key]: KbdLeaf,
           [LinkPlugin.key]: LinkElement,
-          [MediaEmbedPlugin.key]: MediaEmbedElement,
           [MentionInputPlugin.key]: MentionInputElement,
           [MentionPlugin.key]: MentionElement,
           [ParagraphPlugin.key]: ParagraphElement,
-          [PlaceholderPlugin.key]: MediaPlaceholderElement,
           [SlashInputPlugin.key]: SlashInputElement,
           [StrikethroughPlugin.key]: withProps(PlateLeaf, { as: "s" }),
           [SubscriptPlugin.key]: withProps(PlateLeaf, { as: "sub" }),
@@ -160,7 +141,6 @@ export const useCreateEditor = () => {
           [TocPlugin.key]: TocElement,
           [TogglePlugin.key]: ToggleElement,
           [UnderlinePlugin.key]: withProps(PlateLeaf, { as: "u" }),
-          [VideoPlugin.key]: MediaVideoElement,
         }),
       ),
     [],

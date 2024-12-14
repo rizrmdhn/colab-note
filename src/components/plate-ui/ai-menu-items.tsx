@@ -251,6 +251,7 @@ export const AIMenuItems = ({
   setValue: (value: string) => void;
 }) => {
   const { editor, useOption } = useEditorPlugin(AIChatPlugin);
+  // eslint-disable-next-line react-compiler/react-compiler
   const { messages } = useOption("chat");
   const isSelecting = useIsSelecting();
 
@@ -269,7 +270,7 @@ export const AIMenuItems = ({
   }, [menuState]);
 
   useEffect(() => {
-    if (menuGroups.length > 0 && menuGroups[0].items.length > 0) {
+    if (menuGroups.length > 0 && menuGroups[0]?.items?.[0]?.value) {
       setValue(menuGroups[0].items[0].value);
     }
   }, [menuGroups, setValue]);

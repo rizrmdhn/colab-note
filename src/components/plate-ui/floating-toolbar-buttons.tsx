@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React from 'react';
+import React from "react";
 
 import {
   BoldPlugin,
@@ -8,24 +8,22 @@ import {
   ItalicPlugin,
   StrikethroughPlugin,
   UnderlinePlugin,
-} from '@udecode/plate-basic-marks/react';
-import { useEditorReadOnly } from '@udecode/plate-common/react';
+} from "@udecode/plate-basic-marks/react";
+import { useEditorReadOnly } from "@udecode/plate-common/react";
 import {
   BoldIcon,
   Code2Icon,
   ItalicIcon,
   StrikethroughIcon,
   UnderlineIcon,
-  WandSparklesIcon,
-} from 'lucide-react';
+} from "lucide-react";
 
-import { AIToolbarButton } from './ai-toolbar-button';
-import { CommentToolbarButton } from './comment-toolbar-button';
-import { LinkToolbarButton } from './link-toolbar-button';
-import { MarkToolbarButton } from './mark-toolbar-button';
-import { MoreDropdownMenu } from './more-dropdown-menu';
-import { ToolbarGroup } from './toolbar';
-import { TurnIntoDropdownMenu } from './turn-into-dropdown-menu';
+import { CommentToolbarButton } from "./comment-toolbar-button";
+import { LinkToolbarButton } from "./link-toolbar-button";
+import { MarkToolbarButton } from "./mark-toolbar-button";
+import { MoreDropdownMenu } from "./more-dropdown-menu";
+import { ToolbarGroup } from "./toolbar";
+import { TurnIntoDropdownMenu } from "./turn-into-dropdown-menu";
 
 export function FloatingToolbarButtons() {
   const readOnly = useEditorReadOnly();
@@ -34,13 +32,6 @@ export function FloatingToolbarButtons() {
     <>
       {!readOnly && (
         <>
-          <ToolbarGroup>
-            <AIToolbarButton tooltip="AI commands">
-              <WandSparklesIcon />
-              Ask AI
-            </AIToolbarButton>
-          </ToolbarGroup>
-
           <ToolbarGroup>
             <TurnIntoDropdownMenu />
 

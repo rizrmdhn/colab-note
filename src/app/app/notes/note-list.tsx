@@ -14,12 +14,11 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
   Tooltip,
-  TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { Notes } from "@/types/notes";
-import { format, isBefore, parseISO } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { Calendar, LoaderCircleIcon, Trash2 } from "lucide-react";
 import Link from "next/link";
 import React, { useState } from "react";
@@ -30,7 +29,6 @@ interface NoteListProps {
 
 export default function NoteList({ groupedNotes }: NoteListProps) {
   const [todoToDelete, setTodoToDelete] = useState<string | null>(null);
-  const [isUpdatingStatus, setIsUpdatingStatus] = useState(new Set());
 
   const TodoActionButtons = ({
     todo,
@@ -115,7 +113,6 @@ export default function NoteList({ groupedNotes }: NoteListProps) {
                         <Button
                           variant="ghost"
                           size="sm"
-                          disabled={isUpdatingStatus.has(todo.id)}
                           onClick={() => {}}
                           className={`hover:bg-secondary-foreground/10`}
                         >
