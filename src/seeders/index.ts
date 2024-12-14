@@ -1,9 +1,17 @@
 import { seed } from "drizzle-seed";
 import { users } from "../server/db/schema";
 import { seederHelper } from "./helper";
+import { hash } from "@node-rs/argon2";
 
 async function main() {
-  await seed(seederHelper, { users }, { count: 10 });
+  const hasedPassword = await hash("test12345");
+  await seed(seederHelper, { users }, { count: 10 }).refine((f) => ({
+    users: {
+      columns: {
+        password: f.valuesFromArray({ values: [hasedPassword] }),
+      },
+    },
+  }));
 }
 
 main()
