@@ -4,6 +4,7 @@ import { tracked, TRPCError } from "@trpc/server";
 import { z } from "zod";
 import {
   acceptFriendRequestById,
+  cancelFriendRequestById,
   getFriendRequestById,
   getFriendRequestsByUserId,
   getRequestListByUserId,
@@ -148,6 +149,21 @@ export const usersRouter = createTRPCRouter({
     )
     .mutation(async ({ input, ctx }) => {
       const friendRequest = await acceptFriendRequestById(
+        input.requestId,
+        ctx.session.userId,
+      );
+
+      return friendRequest;
+    }),
+
+  cancelRequest: protectedProcedure
+    .input(
+      z.object({
+        requestId: z.string(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const friendRequest = await cancelFriendRequestById(
         input.requestId,
         ctx.session.userId,
       );

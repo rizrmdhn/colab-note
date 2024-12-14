@@ -49,9 +49,31 @@ export const getRequestByUserId = async (userId: string) => {
   return friendRequestsList;
 };
 
+export const validateRequest = async (userId: string, friendId: string) => {
+  const friendRequestsList = await db.query.friendRequests.findFirst({
+    where: and(
+      or(
+        eq(friendRequests.userId, userId),
+        eq(friendRequests.friendId, userId),
+      ),
+      or(
+        eq(friendRequests.userId, friendId),
+        eq(friendRequests.friendId, friendId),
+      ),
+    ),
+  });
+
+  return friendRequestsList;
+};
+
 export const getRequestListByUserId = async (userId: string) => {
   const friendRequestsList = await db.query.friendRequests.findMany({
-    where: eq(friendRequests.friendId, userId),
+    where: and(
+      or(
+        eq(friendRequests.userId, userId),
+        eq(friendRequests.friendId, userId),
+      ),
+    ),
     with: {
       users: true,
       friends: true,
@@ -63,7 +85,7 @@ export const getRequestListByUserId = async (userId: string) => {
 
 export const insertFriendRequest = async (userId: string, friendId: string) => {
   return await db.transaction(async (trx) => {
-    const isExistingFriendRequest = await getRequestByUserId(userId);
+    const isExistingFriendRequest = await validateRequest(userId, friendId);
 
     if (isExistingFriendRequest) {
       throw new Error(
@@ -143,6 +165,28 @@ export const rejectFriendRequestById = async (id: string, userId: string) => {
       where: and(
         eq(friendRequests.id, id),
         eq(friendRequests.friendId, userId),
+      ),
+    });
+
+    if (!friendRequest) {
+      throw new Error("Friend request not found.");
+    }
+
+    await trx.delete(friendRequests).where(eq(friendRequests.id, id)).execute();
+
+    return friendRequest;
+  });
+};
+
+export const cancelFriendRequestById = async (id: string, userId: string) => {
+  return await db.transaction(async (trx) => {
+    const friendRequest = await trx.query.friendRequests.findFirst({
+      where: and(
+        eq(friendRequests.id, id),
+        or(
+          eq(friendRequests.userId, userId),
+          eq(friendRequests.friendId, userId),
+        ),
       ),
     });
 

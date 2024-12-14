@@ -8,6 +8,7 @@ import React, { Suspense } from "react";
 import SearchForm from "./search-form";
 import { useDebounce } from "@/hooks/use-debounce";
 import { Skeleton } from "@/components/ui/skeleton";
+import { LoaderCircle } from "lucide-react";
 
 export default function FriendPage() {
   const utils = api.useUtils();
@@ -21,20 +22,17 @@ export default function FriendPage() {
     onMutate: ({ friendId }) => {
       setIsAddingFriend((prev) => new Set(prev).add(friendId));
     },
-    onSuccess: ({ friendId }) => {
+    onSuccess: () => {
       globalSuccessToast("Friend request sent!");
-      // remove the user from the set of users we're adding
-      setIsAddingFriend((prev) => {
-        const next = new Set(prev);
-        next.delete(friendId);
-        return next;
-      });
 
       utils.users.fetchAllUsers.invalidate();
+      utils.users.searchUsers.invalidate();
+      utils.users.requestList.invalidate();
     },
-    onError: (error, { friendId }) => {
+    onError: (error) => {
       globalErrorToast(error.message);
-
+    },
+    onSettled: (_, __, { friendId }) => {
       // remove the user from the set of users we're adding
       setIsAddingFriend((prev) => {
         const next = new Set(prev);
@@ -86,6 +84,9 @@ export default function FriendPage() {
                       disabled={isAddingFriend.has(user.id)}
                       className="ml-auto"
                     >
+                      {isAddingFriend.has(user.id) && (
+                        <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                      )}
                       {isAddingFriend.has(user.id)
                         ? "Sending..."
                         : "Send Friend Request"}

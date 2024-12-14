@@ -13,6 +13,7 @@ export default function layout({ children }: { children: React.ReactNode }) {
   api.users.fetchAllUsers.prefetch();
   api.users.requestList.prefetch();
   api.users.friendList.prefetch();
+  api.users.fetchMyDetails.prefetch();
 
   return <HydrateClient>{children}</HydrateClient>;
 }

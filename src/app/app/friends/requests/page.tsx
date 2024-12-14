@@ -5,13 +5,16 @@ import { Button } from "@/components/ui/button";
 import { globalErrorToast, globalSuccessToast } from "@/lib/utils";
 import { useFriendRequestStore } from "@/store/friend-request.store";
 import { api } from "@/trpc/react";
+import { LoaderCircle } from "lucide-react";
 import React, { Suspense } from "react";
 
 export default function FriendPage() {
   const utils = api.useUtils();
   const [isAccepting, setIsAccepting] = React.useState(new Set<string>());
   const [isRejecting, setIsRejecting] = React.useState(new Set<string>());
+  const [isCanceling, setIsCanceling] = React.useState(new Set<string>());
   const [requestList] = api.users.requestList.useSuspenseQuery();
+  const [me] = api.users.fetchMyDetails.useSuspenseQuery();
 
   const lastEventId = useFriendRequestStore((state) => state.lastEventId);
   const setFriendRequestLastEventId = useFriendRequestStore(
@@ -26,26 +29,42 @@ export default function FriendPage() {
     onMutate: ({ requestId }) => {
       setIsAccepting((prev) => new Set(prev).add(requestId));
     },
-    onSuccess: ({ id }) => {
+    onSuccess: () => {
       globalSuccessToast("Friend request accepted.");
-
-      setIsAccepting((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
 
       utils.users.friendList.invalidate();
       utils.users.requestList.invalidate();
     },
-    onError: (error, { requestId }) => {
-      setIsAccepting((prev) => {
+    onError: (error) => {
+      globalErrorToast(error.message);
+    },
+    onSettled: (_, __, { requestId }) => {
+      setIsRejecting((prev) => {
         const next = new Set(prev);
         next.delete(requestId);
         return next;
       });
+    },
+  });
 
+  const cancelRequestMutation = api.users.cancelRequest.useMutation({
+    onMutate: ({ requestId }) => {
+      setIsCanceling((prev) => new Set(prev).add(requestId));
+    },
+    onSuccess: () => {
+      globalSuccessToast("Friend request canceled.");
+
+      utils.users.requestList.invalidate();
+    },
+    onError: (error) => {
       globalErrorToast(error.message);
+    },
+    onSettled: (_, __, { requestId }) => {
+      setIsRejecting((prev) => {
+        const next = new Set(prev);
+        next.delete(requestId);
+        return next;
+      });
     },
   });
 
@@ -53,25 +72,20 @@ export default function FriendPage() {
     onMutate: ({ requestId }) => {
       setIsRejecting((prev) => new Set(prev).add(requestId));
     },
-    onSuccess: ({ id }) => {
+    onSuccess: () => {
       globalSuccessToast("Friend request rejected.");
-
-      setIsRejecting((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
 
       utils.users.requestList.invalidate();
     },
-    onError: (error, { requestId }) => {
+    onError: (error) => {
+      globalErrorToast(error.message);
+    },
+    onSettled: (_, __, { requestId }) => {
       setIsRejecting((prev) => {
         const next = new Set(prev);
         next.delete(requestId);
         return next;
       });
-
-      globalErrorToast(error.message);
     },
   });
 
@@ -86,31 +100,56 @@ export default function FriendPage() {
             requestList.map((data) => (
               <FriendCard
                 key={data.id}
-                user={data.users}
+                user={data.userId === me?.id ? data.friends : data.users}
                 action={
-                  <div className="ml-auto flex flex-row gap-2">
-                    <Button
-                      onClick={() => {
-                        rejectRequestMutation.mutate({
-                          requestId: data.id,
-                        });
-                      }}
-                      disabled={isRejecting.has(data.id)}
-                      className="bg-red-500 text-white hover:bg-red-600 hover:text-white"
-                    >
-                      Reject
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        acceptRequestMutation.mutate({
-                          requestId: data.id,
-                        });
-                      }}
-                      disabled={isAccepting.has(data.id)}
-                    >
-                      Accept
-                    </Button>
-                  </div>
+                  data.userId === me?.id ? (
+                    <div className="ml-auto flex flex-row gap-2">
+                      <Button
+                        onClick={() => {
+                          cancelRequestMutation.mutate({
+                            requestId: data.id,
+                          });
+                        }}
+                        disabled={isCanceling.has(data.id)}
+                        className="bg-red-500 text-white hover:bg-red-600 hover:text-white"
+                      >
+                        {isCanceling.has(data.id) && (
+                          <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                        )}
+                        Cancel
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="ml-auto flex flex-row gap-2">
+                      <Button
+                        onClick={() => {
+                          rejectRequestMutation.mutate({
+                            requestId: data.id,
+                          });
+                        }}
+                        disabled={isRejecting.has(data.id)}
+                        className="bg-red-500 text-white hover:bg-red-600 hover:text-white"
+                      >
+                        {isRejecting.has(data.id) && (
+                          <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                        )}
+                        Reject
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          acceptRequestMutation.mutate({
+                            requestId: data.id,
+                          });
+                        }}
+                        disabled={isAccepting.has(data.id)}
+                      >
+                        {isAccepting.has(data.id) && (
+                          <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                        )}
+                        Accept
+                      </Button>
+                    </div>
+                  )
                 }
               />
             ))
