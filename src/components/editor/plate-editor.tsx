@@ -97,7 +97,7 @@ export function PlateEditor({ noteId }: { noteId: string }) {
         lastUpdate: Date.now(),
       });
     },
-    0, // Throttle to 100ms
+    50, // Throttle to 50ms
   );
 
   // Handle cursor position changes
@@ -106,22 +106,19 @@ export function PlateEditor({ noteId }: { noteId: string }) {
       if (!editorContainerRef.current) return;
 
       const rect = editorContainerRef.current.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
+      const scrollLeft = window.scrollX || document.documentElement.scrollLeft;
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
 
-      // Only update if position has changed significantly (optional optimization)
+      // Calculate position as percentages
+      const x = ((event.clientX + scrollLeft - rect.left) / rect.width) * 100;
+      const y = ((event.clientY + scrollTop - rect.top) / rect.height) * 100;
+
       const hasMovedSignificantly =
         !lastMousePosition.current ||
-        Math.abs(lastMousePosition.current.x - x) > 5 ||
-        Math.abs(lastMousePosition.current.y - y) > 5;
+        Math.abs(lastMousePosition.current.x - x) > 1 || // Adjust threshold for percentages
+        Math.abs(lastMousePosition.current.y - y) > 1;
 
-      if (
-        hasMovedSignificantly &&
-        x >= 0 &&
-        y >= 0 &&
-        x <= rect.width &&
-        y <= rect.height
-      ) {
+      if (hasMovedSignificantly) {
         lastMousePosition.current = { x, y };
         throttledSendCursor(x, y);
       }
@@ -310,15 +307,16 @@ export function PlateEditor({ noteId }: { noteId: string }) {
     [debouncedSendChanges, initialLoad, setNotesContent],
   );
 
-  const cursorElement = useMemo(() => {
+  const cursorElements = useMemo(() => {
     return Object.entries(cursors).map(([cursorId, cursorData]) => (
       <div
         key={cursorId}
         className="pointer-events-none absolute z-50"
         style={{
-          left: `${cursorData.x}px`,
-          top: `${cursorData.y}px`,
+          left: `${cursorData.x}%`,
+          top: `${cursorData.y}%`,
           transform: "translate(-50%, -50%)",
+          transition: "all 0.12s cubic-bezier(0.25, 0.1, 0.25, 1)",
         }}
       >
         <div className="flex flex-col items-center">
@@ -329,13 +327,16 @@ export function PlateEditor({ noteId }: { noteId: string }) {
             fill={userColor}
             style={{
               filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.25))",
+              transition: "transform 0.05s ease-out",
             }}
           >
             <path d="M0 0L16 6L10 10L6 16L0 0Z" />
           </svg>
           <span
-            className="mt-1 rounded-full px-2 py-1 text-xs text-white"
-            style={{ backgroundColor: userColor }}
+            className="mt-1 rounded-full px-2 py-1 text-xs text-white opacity-0 transition-opacity duration-200"
+            style={{
+              backgroundColor: userColor,
+            }}
           >
             {cursorData.username}
           </span>
@@ -350,7 +351,7 @@ export function PlateEditor({ noteId }: { noteId: string }) {
         <EditorContainer className="caret-black dark:caret-white">
           <div ref={editorContainerRef} className="relative h-full">
             {/* Cursor Elements */}
-            {cursorElement}
+            {cursorElements}
             <Editor variant="demo" />
           </div>
         </EditorContainer>
