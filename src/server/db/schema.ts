@@ -52,19 +52,19 @@ export const users = createTable(
     }),
   },
   (users) => {
-    return {
-      userIdx: index("user_idx").on(users.id),
-      emailIndex: index("email_idx").on(users.email),
-      usernameIndex: index("username_idx").on(users.username),
-      usernameUnique: unique("username_unique").on(users.username),
-      searchUserIndex: index("search_user_idx").using(
+    return [
+      index("user_idx").on(users.id),
+      index("email_idx").on(users.email),
+      index("username_idx").on(users.username),
+      unique("username_unique").on(users.username),
+      index("search_user_idx").using(
         "gin",
         sql`(
         setweight(to_tsvector('english', ${users.name}), 'A') ||
         setweight(to_tsvector('english', ${users.username}), 'B')
         )`,
       ),
-    };
+    ];
   },
 );
 
@@ -89,10 +89,10 @@ export const session = createTable(
       .notNull(),
   },
   (session) => {
-    return {
-      sessionIdIndex: index("session_id_idx").on(session.id),
-      userIdIndex: index("user_id_idx").on(session.userId),
-    };
+    return [
+      index("session_id_idx").on(session.id),
+      index("user_id_idx").on(session.userId),
+    ];
   },
 );
 
@@ -121,11 +121,11 @@ export const friends = createTable(
       .notNull(),
   },
   (friends) => {
-    return {
-      friendIdIndex: index("friends_id_idx").on(friends.id),
-      userIdIndex: index("friends_user_id_idx").on(friends.userId),
-      friendsFriendIdIndex: index("friends_friend_id_idx").on(friends.friendId),
-    };
+    return [
+      index("friends_id_idx").on(friends.id),
+      index("friends_user_id_idx").on(friends.userId),
+      index("friends_friend_id_idx").on(friends.friendId),
+    ];
   },
 );
 
@@ -154,13 +154,11 @@ export const blocked = createTable(
       .notNull(),
   },
   (blocked) => {
-    return {
-      blockedIdIndex: index("blocked_id_idx").on(blocked.id),
-      userIdIndex: index("blocked_user_id_idx").on(blocked.userId),
-      blockedBlockedIdIndex: index("blocked_blocked_id_idx").on(
-        blocked.blockedId,
-      ),
-    };
+    return [
+      index("blocked_id_idx").on(blocked.id),
+      index("blocked_user_id_idx").on(blocked.userId),
+      index("blocked_blocked_id_idx").on(blocked.blockedId),
+    ];
   },
 );
 
@@ -189,17 +187,11 @@ export const friendRequests = createTable(
       .notNull(),
   },
   (friendRequests) => {
-    return {
-      friendRequestIdIndex: index("friend_requests_id_idx").on(
-        friendRequests.id,
-      ),
-      userIdIndex: index("friend_requests_user_id_idx").on(
-        friendRequests.userId,
-      ),
-      friendIdIndex: index("friend_requests_friend_id_idx").on(
-        friendRequests.friendId,
-      ),
-    };
+    return [
+      index("friend_requests_id_idx").on(friendRequests.id),
+      index("friend_requests_user_id_idx").on(friendRequests.userId),
+      index("friend_requests_friend_id_idx").on(friendRequests.friendId),
+    ];
   },
 );
 
@@ -236,11 +228,11 @@ export const messages = createTable(
     }),
   },
   (messages) => {
-    return {
-      messageIdIndex: index("messages_id_idx").on(messages.id),
-      userIdIndex: index("messages_user_id_idx").on(messages.userId),
-      friendIdIndex: index("messages_friend_id_idx").on(messages.friendId),
-    };
+    return [
+      index("messages_id_idx").on(messages.id),
+      index("messages_user_id_idx").on(messages.userId),
+      index("messages_friend_id_idx").on(messages.friendId),
+    ];
   },
 );
 
@@ -271,10 +263,10 @@ export const notes = createTable(
     }),
   },
   (notes) => {
-    return {
-      notesIdIndex: index("notes_id_idx").on(notes.id),
-      userIdIndex: index("notes_user_id_idx").on(notes.userId),
-    };
+    return [
+      index("notes_id_idx").on(notes.id),
+      index("notes_user_id_idx").on(notes.userId),
+    ];
   },
 );
 
@@ -304,16 +296,10 @@ export const noteCollaborators = createTable(
       .notNull(),
   },
   (noteCollaborators) => {
-    return {
-      noteCollaboratorsIdIndex: index("note_collaborators_id_idx").on(
-        noteCollaborators.id,
-      ),
-      noteIdIndex: index("note_collaborators_note_id_idx").on(
-        noteCollaborators.noteId,
-      ),
-      userIdIndex: index("note_collaborators_user_id_idx").on(
-        noteCollaborators.userId,
-      ),
-    };
+    return [
+      index("note_collaborators_id_idx").on(noteCollaborators.id),
+      index("note_collaborators_note_id_idx").on(noteCollaborators.noteId),
+      index("note_collaborators_user_id_idx").on(noteCollaborators.userId),
+    ];
   },
 );
