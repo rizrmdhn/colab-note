@@ -25,6 +25,10 @@ export const usersRouter = createTRPCRouter({
     return users;
   }),
 
+  fetchMyDetails: protectedProcedure.query(async ({ ctx }) => {
+    return ctx.user;
+  }),
+
   friendMessageList: protectedProcedure.query(async ({ ctx }) => {
     const friends = await getFriendsByUserIdOrderByMessageCreatedAt(
       ctx.session.userId,

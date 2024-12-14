@@ -1,5 +1,4 @@
 import { PlateEditor } from "@/components/editor/plate-editor";
-import { SettingsProvider } from "@/components/editor/settings";
 import { HydrateClient } from "@/trpc/server";
 import UpdateTitleForm from "./update-title-form";
 import { Suspense } from "react";
@@ -16,9 +15,7 @@ export default async function Page({
       <div className="h-screen w-full" data-registry="plate">
         <UpdateTitleForm noteId={noteId} />
         <Suspense fallback={<div>Loading...</div>}>
-          <SettingsProvider>
-            <PlateEditor noteId={noteId} />
-          </SettingsProvider>
+          <PlateEditor noteId={noteId} />
         </Suspense>
       </div>
     </HydrateClient>

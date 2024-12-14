@@ -1,7 +1,7 @@
 import type { Node } from "slate";
 import { create } from "zustand";
 
-interface NoteStore {
+export interface NoteStore {
   noteId: string;
   setNoteId: (noteId: string) => void;
   isSaving: boolean;

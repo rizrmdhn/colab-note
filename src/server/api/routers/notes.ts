@@ -12,6 +12,8 @@ import {
 import { getNoteCollaboratorByNoteIdAndUserId } from "@/server/queries/note-collaborators.queries";
 import { ee } from "@/lib/event-emitter";
 import type { Node } from "slate";
+import type { CursorPosition } from "@/types/cursor-position";
+import { tracked } from "@trpc/server";
 
 export const noteRouter = createTRPCRouter({
   getAllNotes: protectedProcedure.query(async ({ ctx }) => {
@@ -66,14 +68,84 @@ export const noteRouter = createTRPCRouter({
         if (userId === ctx.session.userId) return;
         if (noteId !== input.id) return;
 
-        yield {
-          type: "update" as const,
-          update,
-        };
+        yield tracked(noteId, { type: "note" as const, update });
       }
 
       for await (const [userId, noteId, update] of iterable) {
         yield* maybeYield(userId, noteId, update);
+      }
+    }),
+
+  updateCursorPosition: protectedProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+        noteId: z.string(),
+        username: z.string(),
+        x: z.number(),
+        y: z.number(),
+        lastUpdate: z.number(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      ee.emit("cursorPosition", ctx.session.userId, input.noteId, input);
+      return true;
+    }),
+
+  subscribeToRealtimeCursorPosition: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .subscription(async function* ({ input, ctx, signal }) {
+      const iterable = ee.toIterable("cursorPosition", { signal });
+
+      function* maybeYield(
+        userId: string,
+        noteId: string,
+        position: CursorPosition,
+      ) {
+        if (userId === ctx.session.userId) return;
+        if (noteId !== input.id) return;
+
+        yield tracked(noteId, {
+          type: "cursor" as const,
+          position,
+        });
+      }
+
+      for await (const [userId, noteId, position] of iterable) {
+        yield* maybeYield(userId, noteId, position);
+      }
+    }),
+
+  disconnectCursor: protectedProcedure
+    .input(z.object({ userId: z.string() }))
+    .mutation(async ({ input }) => {
+      ee.off("cursorPosition", (userId, _, __) => {
+        return userId === input.userId;
+      });
+      return true;
+    }),
+
+  subscribeToRealtimeDisconnectCursor: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .subscription(async function* ({ input, ctx, signal }) {
+      const iterable = ee.toIterable("cursorPosition", { signal });
+
+      function* maybeYield(
+        userId: string,
+        noteId: string,
+        position: CursorPosition,
+      ) {
+        if (userId === ctx.session.userId) return;
+        if (noteId !== input.id) return;
+
+        yield tracked(noteId, {
+          type: "cursor" as const,
+          position,
+        });
+      }
+
+      for await (const [userId, noteId, position] of iterable) {
+        yield* maybeYield(userId, noteId, position);
       }
     }),
 

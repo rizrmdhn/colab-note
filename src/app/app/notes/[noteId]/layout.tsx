@@ -20,6 +20,7 @@ export default async function layout({
 
   api.notes.getNoteDetails.prefetch({ id: noteId });
   api.users.friendList.prefetch();
+  api.users.fetchMyDetails.prefetch();
 
   return <HydrateClient>{children}</HydrateClient>;
 }
