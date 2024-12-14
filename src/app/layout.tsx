@@ -25,7 +25,7 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <script src="https://unpkg.com/react-scan/dist/auto.global.js" async />
+        {/* <script src="https://unpkg.com/react-scan/dist/auto.global.js" async /> */}
         {/* rest of your scripts go under */}
       </head>
       <body>
