@@ -1,4 +1,3 @@
-import { useDebounce } from "@/hooks/use-debounce";
 import {
   Form,
   FormControl,
@@ -7,26 +6,18 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { api } from "@/trpc/react";
 import React from "react";
 import { useForm } from "react-hook-form";
 import { InputIcon } from "@/components/ui/input-icon";
 import { LoaderCircle, SearchIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export default function SearchForm() {
-  const [query, setQuery] = React.useState("");
-  const debouncedQuery = useDebounce(query, 500);
+interface SearchFormProps {
+  setQuery: (query: string) => void;
+  isPending?: boolean;
+}
 
-  const { data, isPending } = api.users.searchUsers.useQuery(
-    {
-      query: debouncedQuery,
-    },
-    {
-      enabled: !!debouncedQuery && debouncedQuery.trim().length > 0,
-    },
-  );
-
+export default function SearchForm({ isPending, setQuery }: SearchFormProps) {
   const form = useForm<{
     query: string;
   }>({
@@ -42,7 +33,7 @@ export default function SearchForm() {
   // Update search query when input changes
   React.useEffect(() => {
     setQuery(watchedQuery);
-  }, [watchedQuery]);
+  }, [setQuery, watchedQuery]);
 
   function onSubmit(values: { query: string }) {
     setQuery(values.query);
