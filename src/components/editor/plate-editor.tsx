@@ -18,6 +18,9 @@ import { cursorColors } from "@/lib/constants";
 import type { CursorPosition } from "@/types/cursor-position";
 
 export function PlateEditor({ noteId }: { noteId: string }) {
+  // trpc utils
+  const utils = api.useUtils();
+
   // State management
   const [initialLoad, setInitialLoad] = React.useState(true);
   const [cursors, setCursors] = React.useState<Record<string, CursorPosition>>(
@@ -344,6 +347,39 @@ export function PlateEditor({ noteId }: { noteId: string }) {
       </div>
     ));
   }, [cursors, userColor]);
+
+  // Memoize the cleanup function to prevent infinite updates
+  const performCleanup = useCallback(() => {
+    try {
+      // Clear local state
+      setNotesContent([]);
+      setNoteId("");
+
+      if (noteId) {
+        // Invalidate TRPC queries
+        utils.notes.getNoteDetails.invalidate({ id: noteId });
+        utils.notes.getUserPermissions.invalidate({ id: noteId });
+      }
+    } catch (error) {
+      console.error("Error during note cleanup:", error);
+    }
+  }, [
+    noteId,
+    setNotesContent,
+    setNoteId,
+    utils.notes.getNoteDetails,
+    utils.notes.getUserPermissions,
+  ]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    // Only set up the cleanup when noteId changes
+    return () => {
+      if (noteId) {
+        performCleanup();
+      }
+    };
+  }, [noteId, performCleanup]); // Only depend on noteId and the memoized cleanup function
 
   return (
     <DndProvider backend={HTML5Backend}>
