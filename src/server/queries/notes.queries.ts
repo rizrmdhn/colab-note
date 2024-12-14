@@ -60,7 +60,8 @@ export const createNotes = async (
     const [note] = await trx
       .insert(notes)
       .values({
-        ...data,
+        title: data.title,
+        content: JSON.parse(data.content),
         userId,
       })
       .returning()
@@ -125,7 +126,8 @@ export const updateNote = async (
     const [note] = await trx
       .update(notes)
       .set({
-        ...data,
+        title: data.title,
+        content: JSON.parse(data.content),
         updatedAt: new Date().toISOString(),
       })
       .where(and(eq(notes.userId, userId), eq(notes.id, id)))

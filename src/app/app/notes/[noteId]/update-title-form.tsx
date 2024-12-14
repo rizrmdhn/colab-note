@@ -10,6 +10,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { useEditorPermissions } from "@/hooks/use-editor-permission";
 import { globalErrorToast, globalSuccessToast } from "@/lib/utils";
 import { useNoteStore } from "@/store/notes.store";
 import { api } from "@/trpc/react";
@@ -23,8 +24,16 @@ export default function UpdateTitleForm({ noteId }: UpdateTitleFormProps) {
   const utils = api.useUtils();
 
   const [notes] = api.notes.getNoteDetails.useSuspenseQuery({ id: noteId });
+  const [permissions] = api.notes.getUserPermissions.useSuspenseQuery({
+    id: noteId,
+  });
 
   const setIsSaving = useNoteStore((state) => state.setIsSaving);
+
+  const { canEdit } = useEditorPermissions({
+    editor: null,
+    permission: permissions,
+  });
 
   const updateTitleNewNoteMutation = api.notes.updateTitle.useMutation({
     onMutate: () => {
@@ -53,6 +62,8 @@ export default function UpdateTitleForm({ noteId }: UpdateTitleFormProps) {
   });
 
   function onSubmit(values: { title: string }) {
+    if (!canEdit) return;
+
     updateTitleNewNoteMutation.mutate({ id: noteId, title: values.title });
   }
 
@@ -70,7 +81,11 @@ export default function UpdateTitleForm({ noteId }: UpdateTitleFormProps) {
               <FormItem className="flex w-full flex-col">
                 <FormLabel>Title</FormLabel>
                 <FormControl>
-                  <Input placeholder="Please enter the title" {...field} />
+                  <Input
+                    placeholder="Please enter the title"
+                    {...field}
+                    disabled={!canEdit}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -79,7 +94,7 @@ export default function UpdateTitleForm({ noteId }: UpdateTitleFormProps) {
           <Button
             type="submit"
             className="mt-4"
-            disabled={updateTitleNewNoteMutation.isPending}
+            disabled={updateTitleNewNoteMutation.isPending || !canEdit}
           >
             {updateTitleNewNoteMutation.isPending ? (
               <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />

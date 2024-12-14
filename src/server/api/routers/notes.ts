@@ -22,6 +22,21 @@ export const noteRouter = createTRPCRouter({
     return notes;
   }),
 
+  getUserPermissions: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const notes = await getNoteCollaboratorByNoteIdAndUserId(
+        input.id,
+        ctx.session.userId,
+      );
+
+      if (!notes) {
+        throw new Error("Note not found");
+      }
+
+      return notes;
+    }),
+
   getNoteDetails: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {

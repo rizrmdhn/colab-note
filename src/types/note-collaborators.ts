@@ -1,4 +1,6 @@
+import { type InferSelectModel } from "drizzle-orm";
 import type { InferQueryModel } from "./utils";
+import { type noteCollaborators } from "@/server/db/schema";
 
 export type NoteCollaborator = InferQueryModel<
   "noteCollaborators",
@@ -8,3 +10,5 @@ export type NoteCollaborator = InferQueryModel<
     };
   }
 >;
+
+export type PlainNoteCollaborator = InferSelectModel<typeof noteCollaborators>;

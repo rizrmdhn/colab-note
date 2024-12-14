@@ -1,16 +1,9 @@
-'use client';
+"use client";
 
-import React from 'react';
+import React from "react";
 
-import type { DropdownMenuProps } from '@radix-ui/react-dropdown-menu';
-
-import {
-  focusEditor,
-  useEditorReadOnly,
-  useEditorRef,
-  usePlateStore,
-} from '@udecode/plate-common/react';
-import { Eye, Pen } from 'lucide-react';
+import { focusEditor, useEditorRef } from "@udecode/plate-common/react";
+import { Eye, Pen } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -19,33 +12,73 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
   useOpenState,
-} from './dropdown-menu';
-import { ToolbarButton } from './toolbar';
+} from "./dropdown-menu";
+import { ToolbarButton } from "./toolbar";
+import { useEditorPermissions } from "@/hooks/use-editor-permission";
+import { api } from "@/trpc/react";
+import { useParams } from "next/navigation";
 
-export function ModeDropdownMenu(props: DropdownMenuProps) {
+type EditorMode = "editing" | "viewing";
+
+interface ModeConfig {
+  icon: React.ReactNode;
+  label: string;
+}
+
+const MODES: Record<EditorMode, ModeConfig> = {
+  editing: {
+    icon: <Pen className="h-4 w-4" />,
+    label: "Editing",
+  },
+  viewing: {
+    icon: <Eye className="h-4 w-4" />,
+    label: "Viewing",
+  },
+} as const;
+
+interface ModeDropdownMenuProps
+  extends React.ComponentProps<typeof DropdownMenu> {
+  className?: string;
+}
+
+export function ModeDropdownMenu({
+  className,
+  ...props
+}: ModeDropdownMenuProps) {
+  const params = useParams<{ noteId: string }>();
   const editor = useEditorRef();
-  const setReadOnly = usePlateStore().set.readOnly();
-  const readOnly = useEditorReadOnly();
   const openState = useOpenState();
 
-  let value = 'editing';
+  const [permission] = api.notes.getUserPermissions.useSuspenseQuery({
+    id: params.noteId,
+  });
 
-  if (readOnly) value = 'viewing';
+  const { canEdit, setReadOnly } = useEditorPermissions({
+    editor,
+    permission,
+  });
 
-  const item: any = {
-    editing: (
-      <>
-        <Pen />
-        <span className="hidden lg:inline">Editing</span>
-      </>
-    ),
-    viewing: (
-      <>
-        <Eye />
-        <span className="hidden lg:inline">Viewing</span>
-      </>
-    ),
+  const currentMode: EditorMode = canEdit ? "editing" : "viewing";
+
+  const handleModeChange = (newMode: string) => {
+    if (newMode === "viewing") {
+      setReadOnly(true);
+      return;
+    }
+
+    if (newMode === "editing") {
+      setReadOnly(false);
+      focusEditor(editor);
+      return;
+    }
   };
+
+  const renderModeContent = (mode: EditorMode) => (
+    <>
+      {MODES[mode].icon}
+      <span className="ml-2 hidden lg:inline">{MODES[mode].label}</span>
+    </>
+  );
 
   return (
     <DropdownMenu modal={false} {...openState} {...props}>
@@ -54,37 +87,26 @@ export function ModeDropdownMenu(props: DropdownMenuProps) {
           pressed={openState.open}
           tooltip="Editing mode"
           isDropdown
+          className={className}
         >
-          {item[value]}
+          {renderModeContent(currentMode)}
         </ToolbarButton>
       </DropdownMenuTrigger>
 
       <DropdownMenuContent className="min-w-[180px]" align="start">
         <DropdownMenuRadioGroup
-          value={value}
-          onValueChange={(newValue) => {
-            if (newValue !== 'viewing') {
-              setReadOnly(false);
-            }
-            if (newValue === 'viewing') {
-              setReadOnly(true);
-
-              return;
-            }
-            if (newValue === 'editing') {
-              focusEditor(editor);
-
-              return;
-            }
-          }}
+          value={currentMode}
+          onValueChange={handleModeChange}
         >
-          <DropdownMenuRadioItem value="editing">
-            {item.editing}
-          </DropdownMenuRadioItem>
-
-          <DropdownMenuRadioItem value="viewing">
-            {item.viewing}
-          </DropdownMenuRadioItem>
+          {(Object.keys(MODES) as EditorMode[]).map((mode) => (
+            <DropdownMenuRadioItem
+              key={mode}
+              value={mode}
+              disabled={mode === "editing" && !canEdit}
+            >
+              {renderModeContent(mode)}
+            </DropdownMenuRadioItem>
+          ))}
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>
