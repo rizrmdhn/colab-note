@@ -5,7 +5,7 @@ import { hash } from "@node-rs/argon2";
 
 async function main() {
   const hasedPassword = await hash("test12345");
-  await seed(seederHelper, { users }, { count: 10 }).refine((f) => ({
+  await seed(seederHelper, { users }, { count: 20 }).refine((f) => ({
     users: {
       columns: {
         password: f.valuesFromArray({ values: [hasedPassword] }),
