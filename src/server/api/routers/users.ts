@@ -1,4 +1,4 @@
-import { getAllUsers } from "@/server/queries/users.queries";
+import { getAllUsers, searchUser } from "@/server/queries/users.queries";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { tracked, TRPCError } from "@trpc/server";
 import { z } from "zod";
@@ -52,6 +52,18 @@ export const usersRouter = createTRPCRouter({
 
     return data;
   }),
+
+  searchUsers: protectedProcedure
+    .input(
+      z.object({
+        query: z.string(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const users = await searchUser(ctx.session.userId, input.query);
+
+      return users;
+    }),
 
   sendFriendRequest: protectedProcedure
     .input(

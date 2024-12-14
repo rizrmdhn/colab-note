@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { globalErrorToast, globalSuccessToast } from "@/lib/utils";
 import { api } from "@/trpc/react";
 import React, { Suspense } from "react";
+import SearchForm from "./search-form";
 
 export default function FriendPage() {
   const utils = api.useUtils();
@@ -27,6 +28,7 @@ export default function FriendPage() {
         <h1 className="text-lg font-semibold md:text-2xl">Add Friends</h1>
       </div>
       <div className="flex flex-col flex-wrap gap-4 overflow-y-auto overflow-x-hidden p-4 lg:gap-6 lg:pb-2 lg:pl-6 lg:pr-6 lg:pt-2">
+        <SearchForm />
         <Suspense fallback={<div>Loading...</div>}>
           {users.length > 0 ? (
             users.map((user) => (

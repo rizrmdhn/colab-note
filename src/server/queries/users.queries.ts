@@ -3,7 +3,7 @@ import "server-only";
 import { hash } from "@node-rs/argon2";
 import { type z } from "zod";
 import { type updateUserSchema, type createUserSchema } from "@/schema/users";
-import { and, eq, exists, not, or } from "drizzle-orm";
+import { and, eq, exists, not, or, sql } from "drizzle-orm";
 import { db } from "../db";
 import { users, friends, friendRequests, blocked } from "../db/schema";
 
@@ -105,6 +105,115 @@ export const getUserByEmail = async (email: string) => {
   });
 
   return user;
+};
+
+export const searchUser = async (userId: string, query: string) => {
+  // Format query for partial matching while keeping full-text search benefits
+  const formattedQuery = query
+    .trim()
+    .split(/\s+/)
+    .map((word) => `${word}:*`)
+    .join(" & ");
+
+  const searchCondition = sql`(
+    setweight(to_tsvector('english', ${users.name}), 'A') ||
+    setweight(to_tsvector('english', ${users.username}), 'B')
+  ) @@ to_tsquery('english', ${formattedQuery})`;
+
+  try {
+    const usersList = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        username: users.username,
+        name: users.name,
+        avatar: users.avatar,
+        createdAt: users.createdAt,
+        updatedAt: users.updatedAt,
+        rank: sql<number>`ts_rank(
+          setweight(to_tsvector('english', ${users.name}), 'A') ||
+          setweight(to_tsvector('english', ${users.username}), 'B'),
+          to_tsquery('english', ${formattedQuery})
+        )`,
+      })
+      .from(users)
+      .where(
+        and(
+          not(eq(users.id, userId)),
+          not(
+            exists(
+              db
+                .select()
+                .from(friends)
+                .where(
+                  or(
+                    and(
+                      eq(friends.userId, userId),
+                      eq(friends.friendId, users.id),
+                    ),
+                    and(
+                      eq(friends.friendId, userId),
+                      eq(friends.userId, users.id),
+                    ),
+                  ),
+                ),
+            ),
+          ),
+          not(
+            exists(
+              db
+                .select()
+                .from(friendRequests)
+                .where(
+                  or(
+                    and(
+                      eq(friendRequests.userId, userId),
+                      eq(friendRequests.friendId, users.id),
+                    ),
+                    and(
+                      eq(friendRequests.friendId, userId),
+                      eq(friendRequests.userId, users.id),
+                    ),
+                  ),
+                ),
+            ),
+          ),
+          not(
+            exists(
+              db
+                .select()
+                .from(blocked)
+                .where(
+                  or(
+                    and(
+                      eq(blocked.userId, userId),
+                      eq(blocked.blockedId, users.id),
+                    ),
+                    and(
+                      eq(blocked.blockedId, userId),
+                      eq(blocked.userId, users.id),
+                    ),
+                  ),
+                ),
+            ),
+          ),
+          searchCondition,
+        ),
+      )
+      .orderBy(
+        sql`ts_rank(
+        setweight(to_tsvector('english', ${users.name}), 'A') ||
+        setweight(to_tsvector('english', ${users.username}), 'B'),
+        to_tsquery('english', ${formattedQuery})
+      ) DESC`,
+      )
+      .execute();
+
+    return usersList;
+  } catch (error) {
+    console.error("Search error:", error);
+    throw error;
+  }
 };
 
 export const insertUser = async (data: z.infer<typeof createUserSchema>) => {
