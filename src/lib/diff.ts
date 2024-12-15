@@ -6,7 +6,7 @@ import {
   type Value,
   type TEditor,
 } from "@udecode/plate-common";
-import isEqual from "lodash/isEqual";
+import { isEqual } from "lodash";
 
 // Helper to remove children from properties when comparing
 const stripChildren = <T extends Record<string, unknown>>(
