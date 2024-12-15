@@ -15,4 +15,5 @@ export type FriendWithDetails = {
   users: Users; // The user's details
   friends: Users;
   unreadCount: number;
+  isMessageFromFriend: boolean;
 };

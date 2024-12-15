@@ -13,6 +13,7 @@ export default function ListenNewMessage({}: ListenNewMessageProps) {
   api.message.subscribeToAllMessages.useSubscription(undefined, {
     onData: () => {
       utils.users.friendMessageList.invalidate();
+      utils.users.friendMessageList.refetch();
       utils.message.getMessages.invalidate();
     },
   });

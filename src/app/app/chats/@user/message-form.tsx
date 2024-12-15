@@ -24,6 +24,7 @@ export default function MessageForm({
       setMessage("");
 
       utils.message.getMessages.invalidate();
+      utils.users.friendMessageList.invalidate();
     },
     onError: (error) => {
       globalErrorToast(error.message);
@@ -38,6 +39,7 @@ export default function MessageForm({
       setMessageId("");
 
       utils.message.getMessages.invalidate();
+      utils.users.friendMessageList.invalidate();
     },
     onError: (error) => {
       globalErrorToast(error.message);

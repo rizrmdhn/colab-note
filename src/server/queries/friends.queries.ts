@@ -1,6 +1,6 @@
 import "server-only";
 
-import { aliasedTable, and, desc, eq, or } from "drizzle-orm";
+import { aliasedTable, and, desc, eq, ne, or } from "drizzle-orm";
 import { db } from "../db";
 import { friends, messages, users } from "../db/schema";
 import { getBlockedByBlockedId } from "./blocked.queries";
@@ -23,47 +23,61 @@ export const getFriendsByUserIdOrderByMessageCreatedAt = async (
   userId: string,
 ) => {
   const friendData = aliasedTable(users, "friendData");
+  const userData = aliasedTable(users, "userData");
   const readedMessages = aliasedTable(messages, "readedMessages");
   const friendsWithMessages = await db
     .select({
       friend: friends,
-      users: users,
-      friends: friendData,
+      users: userData, // Current user data
+      friends: friendData, // Friend's data
       latestMessage: messages,
       readedMessages: readedMessages,
     })
     .from(friends)
-    .innerJoin(users, eq(users.id, userId))
+    // Join for current user's data
+    .innerJoin(userData, eq(userData.id, userId))
+    // Join for friend's data with corrected conditions
     .innerJoin(
       friendData,
-      or(
-        and(
+      and(
+        or(
           eq(friends.friendId, friendData.id),
-          eq(friends.userId, userId), // When user is initiator
-        ),
-        and(
           eq(friends.userId, friendData.id),
-          eq(friends.friendId, userId), // When user is friend
         ),
+        ne(friendData.id, userId), // Ensure we're getting the other user's data
       ),
     )
-    .innerJoin(
+    .leftJoin(
       messages,
       and(
-        // Changed this part to only get messages FROM the friend
         or(
+          // Current user sent the message
           and(
-            eq(messages.userId, friendData.id), // Friend is sender
-            eq(messages.friendId, userId), // User is receiver
+            eq(messages.userId, userId),
+            or(
+              eq(messages.friendId, friends.friendId),
+              eq(messages.friendId, friends.userId),
+            ),
+          ),
+          // Friend sent the message
+          and(
+            or(
+              eq(messages.userId, friends.friendId),
+              eq(messages.userId, friends.userId),
+            ),
+            eq(messages.friendId, userId),
           ),
         ),
       ),
     )
-    .innerJoin(
+    .leftJoin(
       readedMessages,
       and(
         eq(readedMessages.userId, userId),
-        eq(readedMessages.friendId, friendData.id),
+        or(
+          eq(readedMessages.friendId, friends.friendId),
+          eq(readedMessages.friendId, friends.userId),
+        ),
         eq(readedMessages.id, messages.id),
       ),
     )
@@ -72,28 +86,23 @@ export const getFriendsByUserIdOrderByMessageCreatedAt = async (
 
   const friendsWithDetails: FriendWithDetails[] = [];
   for (const row of friendsWithMessages) {
-    const isUserTheInitiator = row.friend.userId === userId;
-    const isUserTheFriend = row.friend.friendId === userId;
-    const friendId = isUserTheInitiator
-      ? row.friend.friendId
-      : isUserTheFriend
-        ? row.friend.userId
-        : null;
+    const friendId =
+      row.friend.userId === userId ? row.friend.friendId : row.friend.userId;
 
-    if (
-      friendId &&
-      !friendsWithDetails.some((friend) => friend.friendId === friendId)
-    ) {
+    if (!friendsWithDetails.some((friend) => friend.friendId === friendId)) {
       const unreadCount = await countUnreadMessages(userId, friendId);
+      const isMessageFromFriend = row.latestMessage?.userId === friendId;
+
       friendsWithDetails.push({
         id: row.friend.id,
         userId: userId,
         friendId: friendId,
         createdAt: row.friend.createdAt,
         latestMessage: row.latestMessage,
-        users: row.users,
-        friends: row.friends,
+        users: row.users, // Will always be current user's data
+        friends: row.friends, // Will always be friend's data
         unreadCount,
+        isMessageFromFriend,
       });
     }
   }
