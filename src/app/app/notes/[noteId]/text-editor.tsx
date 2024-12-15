@@ -27,8 +27,7 @@ export default function TextEditor({ noteId }: TextEditorProps) {
     {},
   );
   const [initialLoad, setInitialLoad] = useState(true);
-  const lastSavedContent = useRef<Content>([]);
-  const [value, setValue] = useState<Content>("Welcome to the text editor! 🚀");
+  const [value, setValue] = useState<Content>();
   const [ydoc] = useState(() => new Y.Doc());
   const editor = useEditorStore((state) => state.editor);
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
@@ -152,15 +151,20 @@ export default function TextEditor({ noteId }: TextEditorProps) {
 
   // Set initial editor content
   useEffect(() => {
-    if (notes && editor && initialLoad) {
+    if (notes && editor) {
       setValue(notes.content);
-      editor.commands?.setContent(notes.content);
-
-      // Store initial content and mark as loaded
-      lastSavedContent.current = notes.content;
+      editor.commands.setContent(notes.content);
       setInitialLoad(false);
     }
-  }, [editor, initialLoad, notes]);
+
+    return () => {
+      setValue(undefined);
+      setInitialLoad(false);
+      if (editor) {
+        editor.commands.clearContent();
+      }
+    };
+  }, [editor, notes]);
 
   // Subscribe to cursor updates
   api.notes.subscribeToRealtimeCursorPosition.useSubscription(
@@ -190,7 +194,7 @@ export default function TextEditor({ noteId }: TextEditorProps) {
     appId: "collab-provider",
     name: noteId,
     document: ydoc,
-    baseUrl: `ws://localhost:3001`,
+    baseUrl: `http://localhost:3001`,
   });
 
   const cursorElements = useMemo(() => {
@@ -233,10 +237,10 @@ export default function TextEditor({ noteId }: TextEditorProps) {
 
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <div className="relative flex h-full flex-col">
+      <div className="relative flex h-full w-full flex-col overflow-hidden">
         <div
           ref={editorContainerRef}
-          className="relative flex-1 overflow-y-auto"
+          className="relative flex h-full w-full flex-col items-center overflow-hidden p-0 pb-4 pt-4 lg:p-4"
         >
           {cursorElements}
           <MinimalTiptapEditor
@@ -244,14 +248,13 @@ export default function TextEditor({ noteId }: TextEditorProps) {
             value={value}
             onChange={setValue}
             ydoc={ydoc}
-            ydocField="test-shared-text"
             className="h-full w-full"
-            editorContentClassName="p-5"
+            editorContentClassName="p-5 h-full overflow-y-auto"
             output="html"
             placeholder="Type your description here..."
             autofocus
             editable
-            editorClassName="focus:outline-none"
+            editorClassName="focus:outline-none h-full"
           />
         </div>
       </div>

@@ -11,7 +11,7 @@ export default async function Page({
 
   return (
     <HydrateClient>
-      <div className="h-screen w-full" data-registry="plate">
+      <div className="flex h-screen w-full flex-col overflow-auto">
         <UpdateTitleForm noteId={noteId} />
         <TextEditor noteId={noteId} />
       </div>
