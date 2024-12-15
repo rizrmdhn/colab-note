@@ -1,20 +1,21 @@
-'use client';
+"use client";
 
-import React from 'react';
+import React from "react";
 
-import { cn, withRef } from '@udecode/cn';
-import { EraserIcon } from 'lucide-react';
+import { cn, withRef } from "@udecode/cn";
+import { EraserIcon } from "lucide-react";
 
 import {
   type TColor,
   ColorDropdownMenuItems,
-} from './color-dropdown-menu-items';
-import { ColorCustom } from './colors-custom';
-import { DropdownMenuGroup, DropdownMenuItem } from './dropdown-menu';
+} from "./color-dropdown-menu-items";
+import { ColorCustom } from "./colors-custom";
+import { DropdownMenuGroup, DropdownMenuItem } from "./dropdown-menu";
 
-export const ColorPickerContent = withRef<
-  'div',
+export const ColorPickerContent = React.forwardRef<
+  HTMLDivElement,
   {
+    className?: string;
     clearColor: () => void;
     colors: TColor[];
     customColors: TColor[];
@@ -34,10 +35,10 @@ export const ColorPickerContent = withRef<
       updateCustomColor,
       ...props
     },
-    ref
+    ref,
   ) => {
     return (
-      <div ref={ref} className={cn('flex flex-col', className)} {...props}>
+      <div ref={ref} className={cn("flex flex-col", className)} {...props}>
         <DropdownMenuGroup label="Custom Colors">
           <ColorCustom
             color={color}
@@ -66,13 +67,15 @@ export const ColorPickerContent = withRef<
         )}
       </div>
     );
-  }
+  },
 );
+
+ColorPickerContent.displayName = "ColorPickerContent";
 
 export const ColorPicker = React.memo(
   ColorPickerContent,
   (prev, next) =>
     prev.color === next.color &&
     prev.colors === next.colors &&
-    prev.customColors === next.customColors
+    prev.customColors === next.customColors,
 );
