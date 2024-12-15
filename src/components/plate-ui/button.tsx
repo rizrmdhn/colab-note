@@ -39,22 +39,24 @@ export const buttonVariants = cva(
   },
 );
 
-export const Button = React.forwardRef<
-  HTMLButtonElement,
-  {
-    asChild?: boolean;
-    className?: string;
-  } & VariantProps<typeof buttonVariants>
->(({ asChild = false, className, isMenu, size, variant, ...props }, ref) => {
-  const Comp = asChild ? Slot : "button";
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean;
+  isMenu?: boolean;
+}
 
-  return (
-    <Comp
-      ref={ref}
-      className={cn(buttonVariants({ className, isMenu, size, variant }))}
-      {...props}
-    />
-  );
-});
+export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, isMenu, asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : "button";
+    return (
+      <Comp
+        ref={ref}
+        className={cn(buttonVariants({ className, isMenu, size, variant }))}
+        {...props}
+      />
+    );
+  },
+);
 
 Button.displayName = "Button";

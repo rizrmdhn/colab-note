@@ -1,34 +1,34 @@
-'use client';
+"use client";
 
-import React from 'react';
+import React from "react";
 
-import type { TColumnElement } from '@udecode/plate-layout';
+import type { TColumnElement } from "@udecode/plate-layout";
 
-import { cn, withRef } from '@udecode/cn';
-import { useElement, useRemoveNodeButton } from '@udecode/plate-common/react';
+import { cn, withRef } from "@udecode/cn";
+import { useElement, useRemoveNodeButton } from "@udecode/plate-common/react";
 import {
   ColumnItemPlugin,
   useColumnState,
   useDebouncePopoverOpen,
-} from '@udecode/plate-layout/react';
-import { type LucideProps, Trash2Icon } from 'lucide-react';
-import { useReadOnly } from 'slate-react';
+} from "@udecode/plate-layout/react";
+import { type LucideProps, Trash2Icon } from "lucide-react";
+import { useReadOnly } from "slate-react";
 
-import { Button } from './button';
-import { PlateElement } from './plate-element';
-import { Popover, PopoverAnchor, PopoverContent } from './popover';
-import { Separator } from './separator';
+import { Button } from "@/components/ui/button";
+import { PlateElement } from "./plate-element";
+import { Popover, PopoverAnchor, PopoverContent } from "./popover";
+import { Separator } from "./separator";
 
 export const ColumnGroupElement = withRef<typeof PlateElement>(
   ({ children, className, ...props }, ref) => {
     return (
-      <PlateElement ref={ref} className={cn(className, 'my-2')} {...props}>
+      <PlateElement ref={ref} className={cn(className, "my-2")} {...props}>
         <ColumnFloatingToolbar>
-          <div className={cn('flex size-full gap-4 rounded')}>{children}</div>
+          <div className={cn("flex size-full gap-4 rounded")}>{children}</div>
         </ColumnFloatingToolbar>
       </PlateElement>
     );
-  }
+  },
 );
 
 export function ColumnFloatingToolbar({ children }: React.PropsWithChildren) {
