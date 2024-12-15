@@ -48,6 +48,11 @@ export default function NotePage() {
                   ? user.friends
                   : user.users
             }
+            lastSentUser={
+              user.latestMessage?.userId === users.userId
+                ? "You"
+                : user.friends.username
+            }
             isActive={user.friendId === searchParams.get("userId")}
             message={user.latestMessage?.message ?? ""}
             count={user.unreadCount}

@@ -6,6 +6,7 @@ import { Badge } from "./ui/badge";
 
 interface MessageCardProps {
   user: Users;
+  lastSentUser: string;
   message: string;
   count: number;
   isActive?: boolean;
@@ -15,6 +16,7 @@ interface MessageCardProps {
 
 export default function MessageCard({
   user,
+  lastSentUser,
   message,
   count,
   isActive = false,
@@ -47,7 +49,7 @@ export default function MessageCard({
           <div className="flex min-w-0 flex-col">
             <p className="truncate text-sm font-medium">{user.name}</p>
             <p className="truncate text-sm text-gray-500 dark:text-gray-400">
-              {message}
+              {lastSentUser}: {message}
             </p>
           </div>
           {count > 0 && (

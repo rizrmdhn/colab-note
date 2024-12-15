@@ -75,7 +75,11 @@ export default function MessageList({
         >
           <div className="flex items-center gap-2">
             <span className="font-semibold">
-              {message.userId === userId ? "You" : message.friends.name}
+              {message.friendId === userId
+                ? message.users.username
+                : message.userId === userId
+                  ? "You"
+                  : message.users.username}
             </span>
             <span className="text-xs text-gray-500">
               {format(new Date(message.createdAt), "yyyy-MM-dd HH:mm")}
