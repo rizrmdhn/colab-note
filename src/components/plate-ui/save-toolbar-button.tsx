@@ -70,7 +70,7 @@ export function SaveToolbarButton() {
       tooltip="Save (⌘+⇧+S)"
       onClick={() => {
         // get current content
-        const content = JSON.stringify(editor.children);
+        const content = editor.children;
 
         // save the note
         if (notes.content === content) return;
@@ -78,13 +78,13 @@ export function SaveToolbarButton() {
         if (!noteId) {
           saveNoteMutation.mutate({
             title: notes.title,
-            content,
+            content: JSON.stringify(content),
           });
         } else {
           updateNoteMutation.mutate({
             id: noteId,
             title: notes.title,
-            content,
+            content: JSON.stringify(content),
           });
         }
       }}
