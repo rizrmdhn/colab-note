@@ -15,7 +15,7 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
-import type { Node } from "slate";
+import type { Content } from "@tiptap/react";
 import { v7 as uuidv7 } from "uuid";
 
 /**
@@ -249,7 +249,7 @@ export const notes = createTable(
       })
       .notNull(),
     title: varchar("title", { length: 255 }).notNull(),
-    content: jsonb("content").$type<Node[]>().notNull(),
+    content: jsonb("content").$type<Content[]>().notNull(),
     isDeleted: boolean("is_deleted").notNull().default(false),
     createdAt: timestamp("created_at", {
       withTimezone: true,

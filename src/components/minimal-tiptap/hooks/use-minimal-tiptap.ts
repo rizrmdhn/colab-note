@@ -24,9 +24,11 @@ import { useThrottle } from "../hooks/use-throttle";
 import { toast } from "sonner";
 import Collaboration from "@tiptap/extension-collaboration";
 import type { Doc } from "yjs";
+import { useEditorStore } from "@/store/editor.store";
 
 export interface UseMinimalTiptapEditorProps extends UseEditorOptions {
   ydoc: Doc;
+  ydocField?: string;
   value?: Content;
   output?: "html" | "json" | "text";
   placeholder?: string;
@@ -36,9 +38,13 @@ export interface UseMinimalTiptapEditorProps extends UseEditorOptions {
   onBlur?: (content: Content) => void;
 }
 
-const createExtensions = (placeholder: string, ydoc: Doc) => {
+const createExtensions = (
+  placeholder: string,
+  ydoc: Doc,
+  ydocField: string,
+) => {
   // Create the fragment
-  const fragment = ydoc.getXmlFragment("shared-text");
+  const fragment = ydoc.getXmlFragment(ydocField);
 
   return [
     StarterKit.configure({
@@ -169,7 +175,7 @@ const createExtensions = (placeholder: string, ydoc: Doc) => {
     Placeholder.configure({ placeholder: () => placeholder }),
     Collaboration.configure({
       document: ydoc,
-      field: "shared-text", // Add this line - must match the field name used when creating the text
+      field: ydocField, // Add this line - must match the field name used when creating the text
       fragment,
     }),
   ];
@@ -180,12 +186,15 @@ export const useMinimalTiptapEditor = ({
   output = "html",
   placeholder = "",
   ydoc,
+  ydocField = "shared-text",
   editorClassName,
   throttleDelay = 0,
   onUpdate,
   onBlur,
   ...props
 }: UseMinimalTiptapEditorProps) => {
+  const setEditor = useEditorStore((state) => state.setEditor);
+
   const throttledSetValue = useThrottle(
     (value: Content) => onUpdate?.(value),
     throttleDelay,
@@ -201,8 +210,9 @@ export const useMinimalTiptapEditor = ({
       if (value && editor.isEmpty) {
         editor.commands.setContent(value);
       }
+      setEditor(editor);
     },
-    [value],
+    [setEditor, value],
   );
 
   const handleBlur = React.useCallback(
@@ -211,7 +221,8 @@ export const useMinimalTiptapEditor = ({
   );
 
   const editor = useEditor({
-    extensions: createExtensions(placeholder, ydoc),
+    immediatelyRender: false,
+    extensions: createExtensions(placeholder, ydoc, ydocField),
     editorProps: {
       attributes: {
         autocomplete: "off",
