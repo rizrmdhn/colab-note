@@ -80,6 +80,8 @@ import { DEFAULT_EDITOR_VALUES } from "@/lib/constants";
 import { useNoteStore } from "@/store/notes.store";
 import { useMemo } from "react";
 import type { TDescendant } from "@udecode/plate-common";
+import { YjsPlugin } from "@udecode/plate-yjs/react";
+import { RemoteCursorOverlay } from "@/components/plate-ui/remote-cursor-overlay";
 
 export const useCreateEditor = () => {
   const noteContent = useNoteStore((state) => state.noteContent);
@@ -96,7 +98,27 @@ export const useCreateEditor = () => {
   }, [noteContent]);
 
   const plugins = useMemo(
-    () => [...editorPlugins, FixedToolbarPlugin, FloatingToolbarPlugin],
+    () => [
+      ...editorPlugins,
+      FixedToolbarPlugin,
+      FloatingToolbarPlugin,
+      YjsPlugin.configure({
+        render: {
+          afterEditable: RemoteCursorOverlay,
+        },
+        options: {
+          cursorOptions: {
+            autoSend: true,
+            data: { name: "A plate user", color: "#5AC990" },
+          },
+          disableCursors: false,
+          hocuspocusProviderOptions: {
+            url: "http://localhost:3001",
+            name: "notes",
+          },
+        },
+      }),
+    ],
     [],
   );
 
