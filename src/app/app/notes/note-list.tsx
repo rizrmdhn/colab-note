@@ -17,6 +17,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { globalErrorToast, globalSuccessToast } from "@/lib/utils";
+import { api } from "@/trpc/react";
 import type { Notes } from "@/types/notes";
 import { format, parseISO } from "date-fns";
 import { Calendar, LoaderCircleIcon, Trash2 } from "lucide-react";
@@ -28,7 +30,22 @@ interface NoteListProps {
 }
 
 export default function NoteList({ groupedNotes }: NoteListProps) {
+  const utils = api.useUtils();
   const [todoToDelete, setTodoToDelete] = useState<string | null>(null);
+
+  const deleteNoteMutation = api.notes.delete.useMutation({
+    onSuccess: () => {
+      globalSuccessToast("Note deleted successfully");
+
+      utils.notes.getAllNotes.invalidate();
+    },
+    onError: (error) => {
+      globalErrorToast(error.message);
+    },
+    onSettled: () => {
+      setTodoToDelete(null);
+    },
+  });
 
   const TodoActionButtons = ({
     todo,
@@ -77,7 +94,11 @@ export default function NoteList({ groupedNotes }: NoteListProps) {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => {}}
+              onClick={() => {
+                deleteNoteMutation.mutate({
+                  id: todo.id,
+                });
+              }}
               className="bg-red-500 text-white hover:bg-red-600"
             >
               {false && (
@@ -113,7 +134,6 @@ export default function NoteList({ groupedNotes }: NoteListProps) {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => {}}
                           className={`hover:bg-secondary-foreground/10`}
                         >
                           {/* {todo.isCompleted ? (
