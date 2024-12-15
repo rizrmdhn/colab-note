@@ -2,12 +2,15 @@ import { type Config } from "tailwindcss";
 import { fontFamily } from "tailwindcss/defaultTheme";
 
 export default {
-    darkMode: ["class"],
-    content: ["./src/**/*.tsx"],
+  darkMode: ["class"],
+  content: ["./src/**/*.tsx"],
   theme: {
   	extend: {
   		fontFamily: {
-  			sans: ["var(--font-geist-sans)", ...fontFamily.sans]
+  			sans: [
+  				'var(--font-geist-sans)',
+                    ...fontFamily.sans
+                ]
   		},
   		borderRadius: {
   			lg: 'var(--radius)',
@@ -54,9 +57,46 @@ export default {
   				'3': 'hsl(var(--chart-3))',
   				'4': 'hsl(var(--chart-4))',
   				'5': 'hsl(var(--chart-5))'
+  			},
+  			sidebar: {
+  				DEFAULT: 'hsl(var(--sidebar-background))',
+  				foreground: 'hsl(var(--sidebar-foreground))',
+  				primary: 'hsl(var(--sidebar-primary))',
+  				'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
+  				accent: 'hsl(var(--sidebar-accent))',
+  				'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
+  				border: 'hsl(var(--sidebar-border))',
+  				ring: 'hsl(var(--sidebar-ring))'
+  			},
+  			brand: {
+  				DEFAULT: 'hsl(var(--brand))',
+  				foreground: 'hsl(var(--brand-foreground))'
+  			},
+  			highlight: {
+  				DEFAULT: 'hsl(var(--highlight))',
+  				foreground: 'hsl(var(--highlight-foreground))'
+  			}
+  		},
+  		width: {
+  			'screen-with-sidebar-lg': 'calc(100vw - 280px)',
+  			'screen-with-sidebar-md': 'calc(100vw - 220px)',
+  			'sidebar-lg': '280px',
+  			'sidebar-md': '220px'
+  		},
+  		height: {
+  			'screen-with-header-lg': 'calc(100vh - 60px)',
+  			'screen-with-header-md': 'calc(100vh - 56px)'
+  		},
+  		maxHeight: {
+  			'screen-with-header-lg': 'calc(100vh - 60px)',
+  			'screen-with-header-md': 'calc(100vh - 56px)'
+  		},
+  		screens: {
+  			'main-hover': {
+  				raw: '(hover: hover)'
   			}
   		}
   	}
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [require("tailwindcss-animate"), require("tailwind-scrollbar-hide")],
 } satisfies Config;

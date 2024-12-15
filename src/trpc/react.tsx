@@ -5,7 +5,8 @@ import {
   httpBatchLink,
   loggerLink,
   splitLink,
-  unstable_httpBatchStreamLink,
+  // unstable_httpBatchStreamLink,
+  unstable_httpSubscriptionLink,
 } from "@trpc/client";
 import { createTRPCReact } from "@trpc/react-query";
 import { type inferRouterInputs, type inferRouterOutputs } from "@trpc/server";
@@ -14,6 +15,7 @@ import SuperJSON from "superjson";
 
 import { type AppRouter } from "@/server/api/root";
 import { createQueryClient } from "./query-client";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
 let clientQueryClientSingleton: QueryClient | undefined = undefined;
 const getQueryClient = () => {
@@ -53,19 +55,12 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
             (op.direction === "down" && op.result instanceof Error),
         }),
         splitLink({
-          condition(op) {
-            return op.path.startsWith("auth.");
-          },
-          true: httpBatchLink({
+          condition: (op) => op.type === "subscription",
+          true: unstable_httpSubscriptionLink({
             transformer: SuperJSON,
             url: getBaseUrl() + "/api/trpc",
-            headers: () => {
-              const headers = new Headers();
-              headers.set("x-trpc-source", "nextjs-react");
-              return headers;
-            },
           }),
-          false: unstable_httpBatchStreamLink({
+          false: httpBatchLink({
             transformer: SuperJSON,
             url: getBaseUrl() + "/api/trpc",
             headers: () => {
@@ -84,6 +79,7 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
       <api.Provider client={trpcClient} queryClient={queryClient}>
         {props.children}
       </api.Provider>
+      <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );
 }

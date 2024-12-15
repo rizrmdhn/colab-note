@@ -1,0 +1,34 @@
+services:
+  web:
+    build: .
+    env_file:
+      - .env
+    ports:
+      - "${PORT}:${PORT}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5433/${POSTGRES_DB}
+
+  postgres:
+    image: postgres:16
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "5433:5433" # Changed to port 5433
+    command: -p 5433 # Added command to change internal port
+    healthcheck:
+      test: [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB} -p 5433",
+        ] # Updated healthcheck
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
