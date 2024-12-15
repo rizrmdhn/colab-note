@@ -90,7 +90,7 @@ export function useRealtimeSync<V extends Value>({
     {
       onData: (data) => {
         try {
-          const remoteContent = data.update as V;
+          const remoteContent = data.data.update as V;
 
           // Skip if this is our own update
           //   if (
