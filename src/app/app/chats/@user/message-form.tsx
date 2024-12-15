@@ -78,6 +78,9 @@ export default function MessageForm({
                       message,
                     });
                   }}
+                  disabled={
+                    message.trim() === "" || updateMessageMutation.isPending
+                  }
                 >
                   {/* {isPending ? (
                     <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
