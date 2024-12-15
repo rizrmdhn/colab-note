@@ -2,12 +2,11 @@ import type { CursorPosition } from "@/types/cursor-position";
 import type { FriendRequest } from "@/types/friend-request";
 import type { Message } from "@/types/messages";
 import EventEmitter, { on } from "node:events";
-import type { Node } from "slate";
 
 export interface MyEvents {
   addFriend: (userId: string, friend: FriendRequest) => void;
   sendMessage: (userId: string, message: Message) => void;
-  notesChanges: (userId: string, noteId: string, data: Node[]) => void;
+  notesChanges: (userId: string, noteId: string, data: Uint8Array) => void;
   cursorPosition: (
     userId: string,
     noteId: string,
