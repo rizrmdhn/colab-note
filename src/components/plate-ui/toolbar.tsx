@@ -3,7 +3,7 @@
 import * as React from "react";
 
 import * as ToolbarPrimitive from "@radix-ui/react-toolbar";
-import { cn, withCn, withRef, withVariants } from "@udecode/cn";
+import { cn, withCn, withVariants } from "@udecode/cn";
 import { type VariantProps, cva } from "class-variance-authority";
 import { ChevronDown } from "lucide-react";
 
@@ -232,10 +232,15 @@ export const ToolbarToggleItem = withVariants(
   ["variant", "size"],
 );
 
-export const ToolbarGroup = withRef<"div">(({ children, className }, ref) => {
+export const ToolbarGroup = React.forwardRef<
+  HTMLDivElement,
+  {
+    className?: string;
+    children: React.ReactNode;
+  }
+>(({ children, className }, ref) => {
   return (
     <div
-      // @ts-ignore
       ref={ref}
       className={cn(
         "group/toolbar-group",
@@ -251,3 +256,5 @@ export const ToolbarGroup = withRef<"div">(({ children, className }, ref) => {
     </div>
   );
 });
+
+ToolbarGroup.displayName = "ToolbarGroup";

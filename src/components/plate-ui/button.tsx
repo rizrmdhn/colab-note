@@ -1,7 +1,7 @@
 import * as React from "react";
 
 import { Slot } from "@radix-ui/react-slot";
-import { cn, withRef } from "@udecode/cn";
+import { cn } from "@udecode/cn";
 import { type VariantProps, cva } from "class-variance-authority";
 
 export const buttonVariants = cva(
@@ -39,20 +39,22 @@ export const buttonVariants = cva(
   },
 );
 
-export const Button = withRef<
-  "button",
+export const Button = React.forwardRef<
+  HTMLButtonElement,
   {
     asChild?: boolean;
+    className?: string;
   } & VariantProps<typeof buttonVariants>
 >(({ asChild = false, className, isMenu, size, variant, ...props }, ref) => {
   const Comp = asChild ? Slot : "button";
 
   return (
     <Comp
-      // @ts-ignore
       ref={ref}
       className={cn(buttonVariants({ className, isMenu, size, variant }))}
       {...props}
     />
   );
 });
+
+Button.displayName = "Button";

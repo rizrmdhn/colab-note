@@ -5,7 +5,7 @@ import React from "react";
 import type { TEditor } from "@udecode/plate-common";
 import type { DropTargetMonitor } from "react-dnd";
 
-import { cn, withRef } from "@udecode/cn";
+import { cn } from "@udecode/cn";
 import {
   type PlateElementProps,
   MemoizedChildren,
@@ -50,52 +50,54 @@ export interface DraggableProps extends PlateElementProps {
   ) => boolean;
 }
 
-export const Draggable = withHOC(
-  DraggableProvider,
-  withRef<"div", DraggableProps>(
-    ({ className, onDropHandler, ...props }, ref) => {
-      const { children, element } = props;
+const DraggableInside = React.forwardRef<HTMLDivElement, DraggableProps>(
+  ({ className, onDropHandler, ...props }, ref) => {
+    const { children, element } = props;
 
-      const state = useDraggableState({ element, onDropHandler });
-      const { isDragging } = state;
-      const { previewRef, handleRef } = useDraggable(state);
+    const state = useDraggableState({ element, onDropHandler });
+    const { isDragging } = state;
+    const { previewRef, handleRef } = useDraggable(state);
 
-      return (
-        <div
-          // @ts-ignore
-          ref={ref}
-          className={cn(
-            "relative",
-            isDragging && "opacity-50",
-            "group",
-            className,
-          )}
-        >
-          <Gutter>
-            <div className={cn("slate-blockToolbarWrapper", "flex h-[1.5em]")}>
-              <div
-                className={cn(
-                  "slate-blockToolbar",
-                  "pointer-events-auto mr-1 flex items-center",
-                )}
-              >
-                <div ref={handleRef} className="size-4">
-                  <DragHandle />
-                </div>
+    return (
+      <div
+        ref={ref}
+        className={cn(
+          "relative",
+          isDragging && "opacity-50",
+          "group",
+          className,
+        )}
+      >
+        <Gutter>
+          <div className={cn("slate-blockToolbarWrapper", "flex h-[1.5em]")}>
+            <div
+              className={cn(
+                "slate-blockToolbar",
+                "pointer-events-auto mr-1 flex items-center",
+              )}
+            >
+              <div ref={handleRef} className="size-4">
+                <DragHandle />
               </div>
             </div>
-          </Gutter>
-
-          <div ref={previewRef} className="slate-blockWrapper">
-            <MemoizedChildren>{children}</MemoizedChildren>
-
-            <DropLine />
           </div>
+        </Gutter>
+
+        <div ref={previewRef} className="slate-blockWrapper">
+          <MemoizedChildren>{children}</MemoizedChildren>
+
+          <DropLine />
         </div>
-      );
-    },
-  ),
+      </div>
+    );
+  },
 );
+
+DraggableInside.displayName = "DraggableInside";
+
+export const Draggable = withHOC(DraggableProvider, DraggableInside);
+
+Draggable.displayName = "Draggable";
 
 const Gutter = React.forwardRef<
   HTMLDivElement,
