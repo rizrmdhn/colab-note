@@ -16,6 +16,7 @@ import * as Y from "yjs";
 import type { CursorPosition } from "@/types/cursor-position";
 import { cursorColors } from "@/lib/constants";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
+import { TiptapCollabProvider } from "@hocuspocus/provider";
 
 interface TextEditorProps {
   noteId: string;
@@ -27,10 +28,8 @@ export default function TextEditor({ noteId }: TextEditorProps) {
   );
   const [initialLoad, setInitialLoad] = useState(true);
   const lastSavedContent = useRef<Content>([]);
-  const valueRef = useRef<Content>("Welcome to the text editor! 🚀"); // Sync with `value`
   const [value, setValue] = useState<Content>("Welcome to the text editor! 🚀");
   const [ydoc] = useState(() => new Y.Doc());
-  const stateVectorRef = useRef<Uint8Array>(Y.encodeStateVector(ydoc));
   const editor = useEditorStore((state) => state.editor);
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
   const lastMousePosition = useRef<{ x: number; y: number } | null>(null);
@@ -39,9 +38,17 @@ export default function TextEditor({ noteId }: TextEditorProps) {
     return cursorColors[Math.floor(Math.random() * cursorColors.length)];
   }, []);
 
-  const [notes] = api.notes.getNoteDetails.useSuspenseQuery({
-    id: noteId,
-  });
+  const { data: notes } = api.notes.getNoteDetails.useQuery(
+    {
+      id: noteId,
+    },
+    {
+      suspense: false,
+      refetchOnMount: true,
+      refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
+    },
+  );
   const [user] = api.users.fetchMyDetails.useSuspenseQuery();
 
   // Send cursor mutation
@@ -143,36 +150,6 @@ export default function TextEditor({ noteId }: TextEditorProps) {
     };
   }, [handleMouseMove, user.id]);
 
-  const sendNoteChangeMutation = api.notes.sendNoteChanges.useMutation();
-
-  // Sync `value` to `valueRef`
-  useEffect(() => {
-    valueRef.current = value;
-  }, [value]);
-
-  // Handle local updates from ydoc
-  useEffect(() => {
-    const updateHandler = (update: Uint8Array) => {
-      // Update state vector after applying the local changes
-      stateVectorRef.current = Y.encodeStateVector(ydoc);
-
-      // Send the local update to the server
-      sendNoteChangeMutation.mutate({
-        id: noteId,
-        update,
-      });
-
-      // Store the latest saved content
-      lastSavedContent.current = valueRef.current;
-    };
-
-    ydoc.on("update", updateHandler);
-
-    return () => {
-      ydoc.off("update", updateHandler);
-    };
-  }, [noteId, sendNoteChangeMutation, ydoc]);
-
   // Set initial editor content
   useEffect(() => {
     if (notes && editor && initialLoad) {
@@ -184,23 +161,6 @@ export default function TextEditor({ noteId }: TextEditorProps) {
       setInitialLoad(false);
     }
   }, [editor, initialLoad, notes]);
-
-  // Subscribe to real-time updates
-  api.notes.subscribeToRealtimeNoteChanges.useSubscription(
-    { id: noteId },
-    {
-      onData: (data) => {
-        const { update } = data.data;
-
-        // Apply updates only if there's a meaningful difference
-        const diff = Y.diffUpdate(update, stateVectorRef.current);
-        if (diff.length > 0) {
-          Y.applyUpdate(ydoc, update);
-          stateVectorRef.current = Y.encodeStateVector(ydoc);
-        }
-      },
-    },
-  );
 
   // Subscribe to cursor updates
   api.notes.subscribeToRealtimeCursorPosition.useSubscription(
@@ -226,29 +186,12 @@ export default function TextEditor({ noteId }: TextEditorProps) {
     },
   );
 
-  // Handle page unload/cleanup
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      // Sync any unsaved changes to the server
-      const unsavedUpdate = Y.encodeStateAsUpdate(ydoc, stateVectorRef.current);
-      if (unsavedUpdate.length > 0) {
-        sendNoteChangeMutation.mutate({
-          id: noteId,
-          update: unsavedUpdate,
-        });
-      }
-
-      // Cleanup the Y.Doc instance
-      ydoc.destroy();
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-      ydoc.destroy(); // Also destroy if the component unmounts
-    };
-  }, [noteId, sendNoteChangeMutation, ydoc]);
+  const provider = new TiptapCollabProvider({
+    appId: "collab-provider",
+    name: noteId,
+    document: ydoc,
+    baseUrl: `ws://localhost:3001`,
+  });
 
   const cursorElements = useMemo(() => {
     return Object.entries(cursors).map(([cursorId, cursorData]) => (
@@ -297,6 +240,7 @@ export default function TextEditor({ noteId }: TextEditorProps) {
         >
           {cursorElements}
           <MinimalTiptapEditor
+            provider={provider}
             value={value}
             onChange={setValue}
             ydoc={ydoc}

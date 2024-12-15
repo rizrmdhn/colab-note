@@ -1,37 +1,38 @@
 import { createServer } from "node:http";
 import next from "next";
-import { Server } from "socket.io";
+import { Server } from "@hocuspocus/server";
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "localhost";
-const port = 3001;
+const nextPort = 3000; // Next.js port
+const hocuspocusPort = 3001; // Hocuspocus port
 
 // Store server instances for clean shutdown
-let httpServer: ReturnType<typeof createServer>;
-let io: Server;
+let nextHttpServer: ReturnType<typeof createServer>;
+let hocuspocus: typeof Server;
 
 // Graceful shutdown function
 async function gracefulShutdown() {
   console.log("\nStarting graceful shutdown...");
 
   try {
-    // Close Socket.IO connections
-    if (io) {
-      console.log("Closing Socket.IO connections...");
-      await io.close();
+    // Close Hocuspocus server
+    if (hocuspocus) {
+      console.log("Closing Hocuspocus server...");
+      await hocuspocus.destroy();
     }
 
-    // Close HTTP server
-    if (httpServer) {
-      console.log("Closing HTTP server...");
+    // Close Next.js HTTP server
+    if (nextHttpServer) {
+      console.log("Closing Next.js HTTP server...");
       await new Promise<void>((resolve, reject) => {
-        httpServer.close((err) => {
+        nextHttpServer.close((err) => {
           if (err) {
-            console.error("Error closing HTTP server:", err);
+            console.error("Error closing Next.js HTTP server:", err);
             reject(err);
             return;
           }
-          console.log("HTTP server closed");
+          console.log("Next.js HTTP server closed");
           resolve();
         });
       });
@@ -46,13 +47,20 @@ async function gracefulShutdown() {
 }
 
 // Initialize Next.js app
-const app = next({ dev, hostname, port, turbo: true });
+const app = next({
+  dev,
+  hostname,
+  port: nextPort,
+  turbo: true,
+  turbopack: true,
+});
 const handler = app.getRequestHandler();
 
 app
   .prepare()
   .then(() => {
-    httpServer = createServer((req, res) => {
+    // Start Next.js server
+    nextHttpServer = createServer((req, res) => {
       handler(req, res).catch((err) => {
         console.error(err);
         res.statusCode = 500;
@@ -60,35 +68,24 @@ app
       });
     });
 
-    io = new Server(httpServer);
-
-    io.on("connection", (socket) => {
-      console.log(`Client connected: ${socket.id}`);
-
-      socket.on("disconnect", () => {
-        console.log(`Client disconnected: ${socket.id}`);
-      });
-
-      socket.on("chat_message", (message) => {
-        console.log(`Message from ${socket.id}: ${message}`);
-        io.emit("chat_message", message);
-      });
-
-      socket.on("cursor_move", (cursorData) => {
-        // Broadcast cursor position to all other clients
-        socket.broadcast.emit("cursor_update", cursorData);
-      });
+    // Initialize Hocuspocus server
+    hocuspocus = Server.configure({
+      port: hocuspocusPort,
     });
 
-    // Handle server errors
-    httpServer.once("error", (err) => {
-      console.error("Server error:", err);
+    // Start the Hocuspocus server
+    hocuspocus.listen();
+
+    // Handle Next.js server errors
+    nextHttpServer.once("error", (err) => {
+      console.error("Next.js Server error:", err);
       void gracefulShutdown();
     });
 
-    // Start server
-    httpServer.listen(port, () => {
-      console.log(`> Ready on http://${hostname}:${port}`);
+    // Start Next.js server
+    nextHttpServer.listen(nextPort, () => {
+      console.log(`> Next.js ready on http://${hostname}:${nextPort}`);
+      console.log(`> Hocuspocus ready on http://${hostname}:${hocuspocusPort}`);
     });
 
     // Register shutdown handlers

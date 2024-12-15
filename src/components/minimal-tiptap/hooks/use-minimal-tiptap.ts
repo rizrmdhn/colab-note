@@ -25,8 +25,11 @@ import { toast } from "sonner";
 import Collaboration from "@tiptap/extension-collaboration";
 import type { Doc } from "yjs";
 import { useEditorStore } from "@/store/editor.store";
+import type { TiptapCollabProvider } from "@hocuspocus/provider";
+import CollaborationCursor from "@tiptap/extension-collaboration-cursor";
 
 export interface UseMinimalTiptapEditorProps extends UseEditorOptions {
+  provider: TiptapCollabProvider;
   ydoc: Doc;
   ydocField?: string;
   value?: Content;
@@ -39,13 +42,11 @@ export interface UseMinimalTiptapEditorProps extends UseEditorOptions {
 }
 
 const createExtensions = (
+  provider: TiptapCollabProvider,
   placeholder: string,
   ydoc: Doc,
   ydocField: string,
 ) => {
-  // Create the fragment
-  const fragment = ydoc.getXmlFragment(ydocField);
-
   return [
     StarterKit.configure({
       horizontalRule: false,
@@ -57,6 +58,7 @@ const createExtensions = (
       orderedList: { HTMLAttributes: { class: "list-node" } },
       code: { HTMLAttributes: { class: "inline", spellcheck: "false" } },
       dropcursor: { width: 2, class: "ProseMirror-dropcursor border" },
+      history: false,
     }),
     Link,
     Underline,
@@ -173,10 +175,11 @@ const createExtensions = (
     ResetMarksOnEnter,
     CodeBlockLowlight,
     Placeholder.configure({ placeholder: () => placeholder }),
-    Collaboration.configure({
+    Collaboration.extend().configure({
       document: ydoc,
-      field: ydocField, // Add this line - must match the field name used when creating the text
-      fragment,
+    }),
+    CollaborationCursor.extend().configure({
+      provider,
     }),
   ];
 };
@@ -185,6 +188,7 @@ export const useMinimalTiptapEditor = ({
   value,
   output = "html",
   placeholder = "",
+  provider,
   ydoc,
   ydocField = "shared-text",
   editorClassName,
@@ -222,7 +226,7 @@ export const useMinimalTiptapEditor = ({
 
   const editor = useEditor({
     immediatelyRender: false,
-    extensions: createExtensions(placeholder, ydoc, ydocField),
+    extensions: createExtensions(provider, placeholder, ydoc, ydocField),
     editorProps: {
       attributes: {
         autocomplete: "off",
