@@ -18,6 +18,7 @@ export function PlateEditor({ noteId }: { noteId: string }) {
     {},
   );
   const setNoteContent = useNoteStore((state) => state.setNoteContent);
+  const setNoteId = useNoteStore((state) => state.setNoteId);
   const lastMousePosition = useRef<{ x: number; y: number } | null>(null);
 
   const userColor = useMemo(() => {
@@ -137,10 +138,11 @@ export function PlateEditor({ noteId }: { noteId: string }) {
     if (!notes) return;
 
     setNoteContent(notes.content);
+    setNoteId(noteId);
 
     // eslint-disable-next-line react-compiler/react-compiler
     editor.children = notes.content;
-  }, [editor, notes, setNoteContent]);
+  }, [editor, noteId, notes, setNoteContent, setNoteId]);
 
   // Subscribe to cursor updates
   api.notes.subscribeToRealtimeCursorPosition.useSubscription(
