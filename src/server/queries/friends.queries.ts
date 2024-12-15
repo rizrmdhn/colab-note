@@ -24,7 +24,6 @@ export const getFriendsByUserIdOrderByMessageCreatedAt = async (
 ) => {
   const friendData = aliasedTable(users, "friendData");
   const readedMessages = aliasedTable(messages, "readedMessages");
-
   const friendsWithMessages = await db
     .select({
       friend: friends,
@@ -51,14 +50,11 @@ export const getFriendsByUserIdOrderByMessageCreatedAt = async (
     .innerJoin(
       messages,
       and(
+        // Changed this part to only get messages FROM the friend
         or(
           and(
-            eq(messages.userId, userId),
-            eq(messages.friendId, friendData.id),
-          ),
-          and(
-            eq(messages.userId, friendData.id),
-            eq(messages.friendId, userId),
+            eq(messages.userId, friendData.id), // Friend is sender
+            eq(messages.friendId, userId), // User is receiver
           ),
         ),
       ),
@@ -75,7 +71,6 @@ export const getFriendsByUserIdOrderByMessageCreatedAt = async (
     .orderBy(desc(messages.createdAt));
 
   const friendsWithDetails: FriendWithDetails[] = [];
-
   for (const row of friendsWithMessages) {
     const isUserTheInitiator = row.friend.userId === userId;
     const isUserTheFriend = row.friend.friendId === userId;
@@ -90,12 +85,9 @@ export const getFriendsByUserIdOrderByMessageCreatedAt = async (
       !friendsWithDetails.some((friend) => friend.friendId === friendId)
     ) {
       const unreadCount = await countUnreadMessages(userId, friendId);
-
       friendsWithDetails.push({
         id: row.friend.id,
-        // Always set current user as userId
         userId: userId,
-        // Always set the other user as friendId
         friendId: friendId,
         createdAt: row.friend.createdAt,
         latestMessage: row.latestMessage,
@@ -105,7 +97,6 @@ export const getFriendsByUserIdOrderByMessageCreatedAt = async (
       });
     }
   }
-
   return friendsWithDetails;
 };
 
