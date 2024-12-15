@@ -138,8 +138,9 @@ export function PlateEditor({ noteId }: { noteId: string }) {
 
     setNoteContent(notes.content);
 
+    // eslint-disable-next-line react-compiler/react-compiler
     editor.children = notes.content;
-  }, [notes, setNoteContent]);
+  }, [editor, notes, setNoteContent]);
 
   // Subscribe to cursor updates
   api.notes.subscribeToRealtimeCursorPosition.useSubscription(
