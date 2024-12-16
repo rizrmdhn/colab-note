@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import next from "next";
 import { Server } from "@hocuspocus/server";
-
+import RedisSubscriptionManager from "@/server/redis/subscription-manager";
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "localhost";
 const nextPort = 3000; // Next.js port
@@ -16,6 +16,10 @@ async function gracefulShutdown() {
   console.log("\nStarting graceful shutdown...");
 
   try {
+    // Clean up Redis connections first
+    console.log("Cleaning up Redis connections...");
+    await RedisSubscriptionManager.cleanupAll();
+
     // Close Hocuspocus server
     if (hocuspocus) {
       console.log("Closing Hocuspocus server...");

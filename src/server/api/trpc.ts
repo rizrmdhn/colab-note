@@ -12,6 +12,7 @@ import { ZodError } from "zod";
 
 import { db } from "@/server/db";
 import { getCurrentSession } from "@/lib/session";
+import { pub, sub } from "../redis";
 
 /**
  * 1. CONTEXT
@@ -135,6 +136,8 @@ export const protectedProcedure = t.procedure
       ctx: {
         session: { ...ctx.session },
         user: { ...ctx.user },
+        pub,
+        sub,
       },
     });
   });

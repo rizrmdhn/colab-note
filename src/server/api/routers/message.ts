@@ -1,6 +1,5 @@
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { tracked } from "@trpc/server";
-import { ee } from "@/lib/event-emitter";
 import { z } from "zod";
 import { createMessageSchema, updateMessageSchema } from "@/schema/message";
 import {
@@ -15,10 +14,19 @@ import {
 } from "@/server/queries/messages.queries";
 import type { Message } from "@/types/messages";
 import { THROTTLE_INTERVAL, TYPING_TIMEOUT } from "@/lib/constants";
+import MessageQueue from "@/server/redis/queue";
+import RedisSubscriptionManager from "@/server/redis/subscription-manager";
+import type Redis from "ioredis";
 
 interface TypingState {
   timeout: NodeJS.Timeout;
   lastUpdate: number;
+  isTyping: boolean;
+}
+
+interface TypingEvent {
+  userId: string;
+  friendId: string;
   isTyping: boolean;
 }
 
@@ -29,6 +37,7 @@ function getTypingKey(userId: string, friendId: string) {
 }
 
 function updateTypingState(
+  pub: Redis,
   userId: string,
   friendId: string,
   isTyping: boolean,
@@ -46,7 +55,14 @@ function updateTypingState(
   if (!isTyping) {
     if (currentState?.isTyping) {
       typingStates.delete(key);
-      ee.emit("typingStateChange", userId, friendId, false);
+      const typingData: TypingEvent = {
+        userId,
+        friendId,
+        isTyping: false,
+      };
+
+      // ee.emit("typingStateChange", userId, friendId, false);
+      pub.publish("typingStateChange", JSON.stringify(typingData));
     }
     return;
   }
@@ -59,7 +75,13 @@ function updateTypingState(
     // Update the timeout but don't emit new event
     const timeout = setTimeout(() => {
       typingStates.delete(key);
-      ee.emit("typingStateChange", userId, friendId, false);
+      const typingData: TypingEvent = {
+        userId,
+        friendId,
+        isTyping: false,
+      };
+      // ee.emit("typingStateChange", userId, friendId, false);
+      pub.publish("typingStateChange", JSON.stringify(typingData));
     }, TYPING_TIMEOUT);
 
     typingStates.set(key, {
@@ -73,7 +95,13 @@ function updateTypingState(
   // Set new typing state
   const timeout = setTimeout(() => {
     typingStates.delete(key);
-    ee.emit("typingStateChange", userId, friendId, false);
+    const typingData: TypingEvent = {
+      userId,
+      friendId,
+      isTyping: false,
+    };
+    // ee.emit("typingStateChange", userId, friendId, false);
+    pub.publish("typingStateChange", JSON.stringify(typingData));
   }, TYPING_TIMEOUT);
 
   typingStates.set(key, {
@@ -84,7 +112,13 @@ function updateTypingState(
 
   // Only emit if state changed or enough time passed
   if (!currentState?.isTyping) {
-    ee.emit("typingStateChange", userId, friendId, true);
+    const typingData: TypingEvent = {
+      userId,
+      friendId,
+      isTyping: true,
+    };
+    // ee.emit("typingStateChange", userId, friendId, true);
+    pub.publish("typingStateChange", JSON.stringify(typingData));
   }
 }
 
@@ -103,7 +137,8 @@ export const messageRouter = createTRPCRouter({
         throw new Error("Message not found");
       }
 
-      ee.emit("sendMessage", ctx.session.userId, fullMessage);
+      // ee.emit("sendMessage", ctx.session.userId, fullMessage);
+      await ctx.pub.publish("sendMessage", JSON.stringify(fullMessage));
 
       return message;
     }),
@@ -131,38 +166,58 @@ export const messageRouter = createTRPCRouter({
     ctx,
     signal,
   }) {
-    const iterable = ee.toIterable("sendMessage", {
-      signal: signal,
-    });
+    // Set up message queue and processing
+    const messageQueue = new MessageQueue<Message>();
+    const subscriptionManager = RedisSubscriptionManager.getInstance<Message>(
+      ctx.sub,
+      "sendMessage",
+      ctx.session.id,
+    );
 
-    // Fetch the last message createdAt based on the last event id
-    const lastMessageCreatedAt = await (async () => {
-      const message = await getLatestMessage(ctx.session.userId);
+    try {
+      const lastMessageCreatedAt = await (async (): Promise<string | null> => {
+        const message = await getLatestMessage(ctx.session.userId);
+        return message?.createdAt ?? null;
+      })();
 
-      return message?.createdAt ?? null;
-    })();
-
-    // First, yield any messages that were sent before the subscription
-    const messages = await getAllMessagesByUserId(ctx.session.userId);
-
-    function* maybeYield(message: Message) {
-      if (ctx.session.userId === message.userId) {
-        return;
+      function* maybeYield(message: Message) {
+        if (ctx.session.userId === message.userId) {
+          return;
+        }
+        if (lastMessageCreatedAt && message.createdAt <= lastMessageCreatedAt) {
+          // ignore posts that we've already sent - happens if there is a race condition between the query and the event emitter
+          return;
+        }
+        yield tracked(message.id, message);
       }
 
-      if (lastMessageCreatedAt && message.createdAt <= lastMessageCreatedAt) {
-        return;
+      // First yield existing messages
+      const messages = await getAllMessagesByUserId(ctx.session.userId);
+      for (const message of messages) {
+        yield* maybeYield(message);
       }
 
-      yield tracked(message.id, message);
-    }
+      // Subscribe and handle messages
+      subscriptionManager.onMessage((parsedMessage: Message) => {
+        messageQueue.enqueue(parsedMessage);
+      });
 
-    for (const message of messages) {
-      yield* maybeYield(message);
-    }
+      await subscriptionManager.subscribe();
 
-    for await (const [, message] of iterable) {
-      yield* maybeYield(message);
+      signal?.addEventListener("abort", () => {
+        void subscriptionManager.cleanup();
+      });
+
+      // Process messages
+      while (!signal?.aborted) {
+        const message = await messageQueue.dequeue();
+        yield* maybeYield(message);
+      }
+    } catch (error) {
+      console.error("Subscription error in subscribeToAllMessages:", error);
+      throw error;
+    } finally {
+      void subscriptionManager.cleanup();
     }
   }),
 
@@ -174,46 +229,72 @@ export const messageRouter = createTRPCRouter({
       }),
     )
     .subscription(async function* ({ input, ctx, signal }) {
-      const iterable = ee.toIterable("sendMessage", {
-        signal: signal,
-      });
-
-      // Fetch the last message createdAt based on the last event id
-      const lastMessageCreatedAt = await (async () => {
-        const lastEventId = input.lastEventId;
-        if (!lastEventId) return null;
-
-        const message = await getMessageByIdOnly(lastEventId);
-
-        return message?.createdAt ?? null;
-      })();
-
-      // First, yield any messages that were sent before the subscription
-      const messages = await getAllMessages(
-        ctx.session.userId,
-        input.friendId,
-        lastMessageCreatedAt,
+      const messageQueue = new MessageQueue<Message>();
+      const subscriptionManager = RedisSubscriptionManager.getInstance<Message>(
+        ctx.sub,
+        "sendMessage",
+        ctx.session.id,
       );
 
-      function* maybeYield(message: Message) {
-        if (ctx.session.userId === message.userId) {
-          return;
+      try {
+        const lastMessageCreatedAt = await (async (): Promise<
+          string | null
+        > => {
+          const lastEventId = input.lastEventId;
+          if (!lastEventId) return null;
+          const message = await getMessageByIdOnly(lastEventId);
+          return message?.createdAt ?? null;
+        })();
+
+        function* maybeYield(message: Message) {
+          if (ctx.session.userId === message.userId) {
+            return;
+          }
+          if (
+            lastMessageCreatedAt &&
+            message.createdAt <= lastMessageCreatedAt
+          ) {
+            return;
+          }
+          yield tracked(message.id, message);
         }
 
-        if (lastMessageCreatedAt && message.createdAt <= lastMessageCreatedAt) {
-          // ignore posts that we've already sent - happens if there is a race condition between the query and the event emitter
-          return;
+        // Initial messages
+        const messages = await getAllMessages(
+          ctx.session.userId,
+          input.friendId,
+          lastMessageCreatedAt,
+        );
+
+        for (const message of messages) {
+          yield* maybeYield(message);
         }
 
-        yield tracked(message.id, message);
-      }
+        // Subscribe and handle messages
+        subscriptionManager.onMessage((parsedMessage: Message) => {
+          messageQueue.enqueue(parsedMessage);
+        });
 
-      for (const message of messages) {
-        yield* maybeYield(message);
-      }
+        await subscriptionManager.subscribe();
 
-      for await (const [, message] of iterable) {
-        yield* maybeYield(message);
+        signal?.addEventListener("abort", () => {
+          void subscriptionManager.cleanup();
+        });
+
+        // Process messages
+        while (!signal?.aborted) {
+          const message = await messageQueue.dequeue();
+          yield* maybeYield(message);
+        }
+      } catch (error) {
+        console.error("Subscription error:", error);
+        throw error;
+      } finally {
+        try {
+          await subscriptionManager.cleanup();
+        } catch (error) {
+          console.error("Error during final cleanup:", error);
+        }
       }
     }),
 
@@ -234,49 +315,65 @@ export const messageRouter = createTRPCRouter({
         return true;
       }
 
-      updateTypingState(ctx.session.userId, input.friendId, input.isTyping);
+      updateTypingState(
+        ctx.pub,
+        ctx.session.userId,
+        input.friendId,
+        input.isTyping,
+      );
       return true;
     }),
 
   listenToIsTyping: protectedProcedure
     .input(z.object({ friendId: z.string() }))
     .subscription(async function* ({ input, ctx, signal }) {
-      const iterable = ee.toIterable("typingStateChange", { signal });
-
-      function* maybeYield(
-        userId: string,
-        friendId: string,
-        isTyping: boolean,
-      ) {
-        // Only yield if the event is for our friend typing to us
-        if (userId === input.friendId && friendId === ctx.session.userId) {
-          yield tracked(friendId, {
-            type: "isTyping" as const,
-            isTyping,
-          });
-        }
-      }
-
-      // Check initial state
-      const key = getTypingKey(input.friendId, ctx.session.userId);
-      const initialState = typingStates.has(key);
-      if (initialState) {
-        yield tracked(input.friendId, {
-          type: "isTyping" as const,
-          isTyping: true,
-        });
-      }
+      const typingQueue = new MessageQueue<TypingEvent>();
+      const subscriptionManager =
+        RedisSubscriptionManager.getInstance<TypingEvent>(
+          ctx.sub,
+          "typingStateChange",
+          ctx.session.id,
+        );
 
       try {
-        for await (const [userId, friendId, isTyping] of iterable) {
-          yield* maybeYield(userId, friendId, isTyping);
+        function* maybeYield(
+          userId: string,
+          friendId: string,
+          isTyping: boolean,
+        ) {
+          // Only yield if the event is for our friend typing to us
+          if (userId === input.friendId && friendId === ctx.session.userId) {
+            yield tracked(friendId, {
+              type: "isTyping" as const,
+              isTyping,
+            });
+          }
         }
+
+        // Subscribe and handle messages
+        subscriptionManager.onMessage((parsedMessage: TypingEvent) => {
+          typingQueue.enqueue(parsedMessage);
+        });
+
+        await subscriptionManager.subscribe();
+
+        signal?.addEventListener("abort", () => {
+          void subscriptionManager.cleanup();
+        });
+
+        // Process messages
+        while (!signal?.aborted) {
+          const message = await typingQueue.dequeue();
+          yield* maybeYield(message.userId, message.friendId, message.isTyping);
+        }
+      } catch (error) {
+        console.error("Subscription error:", error);
+        throw error;
       } finally {
-        // Cleanup on unsubscribe
-        const key = getTypingKey(ctx.session.userId, input.friendId);
-        if (typingStates.has(key)) {
-          clearTimeout(typingStates.get(key)!.timeout);
-          typingStates.delete(key);
+        try {
+          await subscriptionManager.cleanup();
+        } catch (error) {
+          console.error("Error during final cleanup:", error);
         }
       }
     }),
@@ -295,7 +392,8 @@ export const messageRouter = createTRPCRouter({
         throw new Error("Message not found");
       }
 
-      ee.emit("sendMessage", ctx.session.userId, fullMessage);
+      // ee.emit("sendMessage", ctx.session.userId, fullMessage);
+      await ctx.pub.publish("sendMessage", JSON.stringify(fullMessage));
 
       return message;
     }),
