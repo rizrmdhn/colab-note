@@ -11,7 +11,6 @@ import {
 } from "@/server/queries/notes.queries";
 import { getNoteCollaboratorByNoteIdAndUserId } from "@/server/queries/note-collaborators.queries";
 import { ee } from "@/lib/event-emitter";
-import type { Node } from "slate";
 import type { CursorPosition } from "@/types/cursor-position";
 import { tracked } from "@trpc/server";
 
@@ -79,7 +78,7 @@ export const noteRouter = createTRPCRouter({
     .subscription(async function* ({ input, ctx, signal }) {
       const iterable = ee.toIterable("notesChanges", { signal });
 
-      function* maybeYield(userId: string, noteId: string, update: Node[]) {
+      function* maybeYield(userId: string, noteId: string, update: Uint8Array) {
         if (userId === ctx.session.userId) return;
         if (noteId !== input.id) return;
 

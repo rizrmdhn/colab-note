@@ -8,20 +8,7 @@ export const AVALIABLE_COLLABORATOR_TYPE = [
   "viewer",
 ] as const;
 
-export const DEFAULT_EDITOR_VALUES = [
-  {
-    children: [{ text: "Welcome to your new note!" }],
-    type: "h1",
-  },
-  {
-    children: [
-      { text: "This is a collaborative note. " },
-      { bold: true, text: "Invite collaborators" },
-      { text: " to work together in real-time." },
-    ],
-    type: "p",
-  },
-];
+export const DEFAULT_EDITOR_VALUES = "Welcome to your new note! 🚀";
 
 export const cursorColors = [
   "#FF6B6B",
@@ -33,3 +20,6 @@ export const cursorColors = [
   "#9B59B6",
   "#3498DB",
 ] as const;
+
+export const TYPING_TIMEOUT = 3000; // 3 seconds
+export const THROTTLE_INTERVAL = 500; // 1 second

@@ -6,7 +6,7 @@ import "./src/env.js";
 
 /** @type {import("next").NextConfig} */
 const config = {
-  output: "standalone",
+  // output: "standalone",
   serverExternalPackages: ["@node-rs/argon2"],
   experimental: {
     reactCompiler: true,

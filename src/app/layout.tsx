@@ -6,6 +6,7 @@ import { type Metadata } from "next";
 import { TRPCReactProvider } from "@/trpc/react";
 import { Toaster } from "@/components/ui/sonner";
 import Providers from "./provider";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export const metadata: Metadata = {
   title: "Login - Collaborative Note Taking",
@@ -31,10 +32,12 @@ export default async function RootLayout({
       <body>
         <TRPCReactProvider>
           <Providers>
-            {children}
-            {sheet}
-            <div id="sheet-root" />
-            <Toaster position="bottom-right" richColors />
+            <TooltipProvider>
+              {children}
+              {sheet}
+              <div id="sheet-root" />
+              <Toaster position="bottom-right" richColors />
+            </TooltipProvider>
           </Providers>
         </TRPCReactProvider>
       </body>

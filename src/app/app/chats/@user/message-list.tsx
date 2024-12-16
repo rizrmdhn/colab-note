@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { format } from "date-fns";
 import { globalInfoToast } from "@/lib/utils";
 import { skipToken } from "@tanstack/react-query";
+import { TypingIndicator } from "@/components/typing-indicator";
 
 interface MessageListProps {
   userId: string;
@@ -16,29 +17,20 @@ export default function MessageList({
   onUpdate,
 }: MessageListProps) {
   const listRef = useRef<HTMLDivElement>(null);
-
-  const [lastEventId, setLastEventId] = useState<
-    // Query has not been run yet
-    | false
-    // Empty list
-    | null
-    // Event id
-    | string
-  >(false);
+  const [lastEventId, setLastEventId] = useState<false | null | string>(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [typingUserId, setTypingUserId] = useState<string | null>(null);
 
   const [messages] = api.message.getMessages.useSuspenseQuery({
     friendId,
   });
 
   if (messages && lastEventId === false) {
-    // We should only set the lastEventId once, if the SSE-connection is lost, it will automatically reconnect and continue from the last event id
-    // Changing this value will trigger a new subscription
     setLastEventId(messages.at(-1)?.id ?? null);
   }
 
   const utils = api.useUtils();
 
-  // Enable subscription only when we have a valid userId
   api.message.subscribeToMessages.useSubscription(
     lastEventId === false ? skipToken : { friendId: userId ?? "", lastEventId },
     {
@@ -50,10 +42,22 @@ export default function MessageList({
       onError: (error) => {
         globalInfoToast(error.message);
         const lastMessageEventId = messages?.at(-1)?.id;
-
         if (lastMessageEventId) {
           setLastEventId(lastMessageEventId);
         }
+      },
+    },
+  );
+
+  api.message.listenToIsTyping.useSubscription(
+    friendId ? { friendId } : skipToken,
+    {
+      onData: (data) => {
+        setIsTyping(data.data.isTyping);
+        setTypingUserId(data.id);
+      },
+      onError: (error) => {
+        globalInfoToast(error.message);
       },
     },
   );
@@ -62,10 +66,13 @@ export default function MessageList({
     if (listRef.current) {
       listRef.current.scrollTop = listRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, isTyping]);
 
   return (
-    <div ref={listRef} className="h-[calc(100vh-330px)] overflow-y-auto p-4">
+    <div
+      ref={listRef}
+      className="h-[calc(100vh-330px)] space-y-4 overflow-y-auto p-4"
+    >
       {messages.map((message) => (
         <div
           key={message.id}
@@ -103,7 +110,8 @@ export default function MessageList({
           )}
         </div>
       ))}
-      {messages.length === 0 && (
+      {isTyping && <TypingIndicator isOwnMessage={typingUserId === friendId} />}
+      {messages.length === 0 && !isTyping && (
         <div className="flex h-full items-center justify-center text-gray-500">
           No messages yet
         </div>
