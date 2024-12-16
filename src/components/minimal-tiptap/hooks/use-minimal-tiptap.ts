@@ -24,14 +24,12 @@ import { useThrottle } from "../hooks/use-throttle";
 import { toast } from "sonner";
 import Collaboration from "@tiptap/extension-collaboration";
 import type { Doc } from "yjs";
-import { useEditorStore } from "@/store/editor.store";
+import { type ConnectedUser, useEditorStore } from "@/store/editor.store";
 import type { TiptapCollabProvider } from "@hocuspocus/provider";
 import CollaborationCursor from "@tiptap/extension-collaboration-cursor";
 
 export interface UseMinimalTiptapEditorProps extends UseEditorOptions {
-  provider: TiptapCollabProvider;
   ydoc: Doc;
-  ydocField?: string;
   value?: Content;
   output?: "html" | "json" | "text";
   placeholder?: string;
@@ -41,11 +39,54 @@ export interface UseMinimalTiptapEditorProps extends UseEditorOptions {
   onBlur?: (content: Content) => void;
 }
 
+const createCursor = (user: ConnectedUser) => {
+  const cursor = document.createElement("span");
+  cursor.id = `cursor-${user.id}`;
+  cursor.classList.add(
+    "relative",
+    "inline-block",
+    "pointer-events-none",
+    "z-10",
+  );
+  cursor.style.cssText = `
+        width: 2px;
+        height: 1.2em;
+        background-color: ${user.color};
+        margin-left: -1px;
+        margin-right: -1px;
+        display: inline-block;
+        vertical-align: text-bottom;
+    `;
+
+  // const label = document.createElement("div");
+  // label.classList.add(
+  //   "absolute",
+  //   "-top-6", // Changed from -top-10 to bring it closer
+  //   // do not center horizontally
+  //   "left-1/2",
+  //   "-translate-x-1/2", // Offset by half its width
+  //   "px-2",
+  //   "py-0.5",
+  //   "text-xs",
+  //   "font-medium",
+  //   "text-white",
+  //   "rounded-md",
+  //   "whitespace-nowrap",
+  //   "select-none",
+  //   "z-20",
+  // );
+  // label.style.backgroundColor = user.color;
+  // label.textContent = user.name;
+
+  // cursor.appendChild(label);
+  return cursor;
+};
+
 const createExtensions = (
-  provider: TiptapCollabProvider,
+  provider: TiptapCollabProvider | null,
   placeholder: string,
   ydoc: Doc,
-  ydocField: string,
+  connectedUser: ConnectedUser | null,
 ) => {
   return [
     StarterKit.configure({
@@ -180,6 +221,14 @@ const createExtensions = (
     }),
     CollaborationCursor.extend().configure({
       provider,
+      user: {
+        id: connectedUser?.id ?? randomId(),
+        name: connectedUser?.name ?? "Anonymous",
+        color: connectedUser?.color ?? "#000",
+      },
+      render(user) {
+        return createCursor(user as ConnectedUser);
+      },
     }),
   ];
 };
@@ -188,9 +237,7 @@ export const useMinimalTiptapEditor = ({
   value,
   output = "html",
   placeholder = "",
-  provider,
   ydoc,
-  ydocField = "shared-text",
   editorClassName,
   throttleDelay = 0,
   onUpdate,
@@ -198,6 +245,8 @@ export const useMinimalTiptapEditor = ({
   ...props
 }: UseMinimalTiptapEditorProps) => {
   const setEditor = useEditorStore((state) => state.setEditor);
+  const provider = useEditorStore((state) => state.provider);
+  const connectedUser = useEditorStore((state) => state.users);
 
   const throttledSetValue = useThrottle(
     (value: Content) => onUpdate?.(value),
@@ -211,12 +260,14 @@ export const useMinimalTiptapEditor = ({
 
   const handleCreate = React.useCallback(
     (editor: Editor) => {
-      if (value && editor.isEmpty) {
-        editor.commands.setContent(value);
+      if (value && editor.isEmpty && provider) {
+        provider.on("synced", () => {
+          editor.commands.setContent("Test");
+        });
       }
       setEditor(editor);
     },
-    [setEditor, value],
+    [provider, setEditor, value],
   );
 
   const handleBlur = React.useCallback(
@@ -226,7 +277,7 @@ export const useMinimalTiptapEditor = ({
 
   const editor = useEditor({
     immediatelyRender: false,
-    extensions: createExtensions(provider, placeholder, ydoc, ydocField),
+    extensions: createExtensions(provider, placeholder, ydoc, connectedUser),
     editorProps: {
       attributes: {
         autocomplete: "off",
@@ -234,6 +285,9 @@ export const useMinimalTiptapEditor = ({
         autocapitalize: "off",
         class: cn("focus:outline-none", editorClassName),
       },
+    },
+    onContentError: ({ disableCollaboration }) => {
+      disableCollaboration();
     },
     onUpdate: ({ editor }) => handleUpdate(editor),
     onCreate: ({ editor }) => handleCreate(editor),

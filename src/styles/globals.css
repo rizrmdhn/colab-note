@@ -87,3 +87,11 @@
     max-height: var(--radix-popover-content-available-height);
   }
 }
+
+.ProseMirror .collaboration-cursor__caret {
+  @apply absolute h-[1.2em] border-l-2;
+  margin-left: -1px;
+  margin-right: -1px;
+  word-break: normal;
+  pointer-events: none;
+}

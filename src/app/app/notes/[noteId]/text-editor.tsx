@@ -9,14 +9,13 @@ import React, {
   useRef,
   useState,
 } from "react";
-import type { Content } from "@tiptap/react";
+import type { Content, Editor } from "@tiptap/react";
 import { MinimalTiptapEditor } from "@/components/minimal-tiptap";
 import { useEditorStore } from "@/store/editor.store";
 import * as Y from "yjs";
 import type { CursorPosition } from "@/types/cursor-position";
 import { cursorColors } from "@/lib/constants";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
-import { TiptapCollabProvider } from "@hocuspocus/provider";
 
 interface TextEditorProps {
   noteId: string;
@@ -26,18 +25,26 @@ export default function TextEditor({ noteId }: TextEditorProps) {
   const [cursors, setCursors] = React.useState<Record<string, CursorPosition>>(
     {},
   );
-  const [initialLoad, setInitialLoad] = useState(true);
   const [value, setValue] = useState<Content>();
   const [ydoc] = useState(() => new Y.Doc());
   const editor = useEditorStore((state) => state.editor);
+  const provider = useEditorStore((state) => state.provider);
+  const initProvider = useEditorStore((state) => state.initProvider);
   const editorContainerRef = useRef<HTMLDivElement | null>(null);
   const lastMousePosition = useRef<{ x: number; y: number } | null>(null);
+  const providerStatusRef = useRef<string>("disconnected");
+  const initialSyncDoneRef = useRef(false);
+  const [, setLastSyncedContent] = useState<Content>(null);
+  const hasLocalChangesRef = useRef(false);
 
   const userColor = useMemo(() => {
-    return cursorColors[Math.floor(Math.random() * cursorColors.length)];
+    return (
+      cursorColors[Math.floor(Math.random() * cursorColors.length)] ??
+      cursorColors[0]
+    );
   }, []);
 
-  const { data: notes } = api.notes.getNoteDetails.useQuery(
+  const { data: notes, isLoading } = api.notes.getNoteDetails.useQuery(
     {
       id: noteId,
     },
@@ -50,23 +57,130 @@ export default function TextEditor({ noteId }: TextEditorProps) {
   );
   const [user] = api.users.fetchMyDetails.useSuspenseQuery();
 
+  const handleConnect = useCallback(() => {
+    providerStatusRef.current = "connected";
+    // set users connected to the document
+  }, []);
+
+  const handleDisconnect = useCallback(() => {
+    providerStatusRef.current = "disconnected";
+  }, []);
+
+  const handleStatus = useCallback((status: { status: string }) => {
+    providerStatusRef.current = status.status;
+  }, []);
+
+  const handleSynced = useCallback(
+    (ytext: Y.Text, currentEditor: Editor | null) => {
+      if (!initialSyncDoneRef.current) {
+        if (ytext.length > 0) {
+          // Use the collaborative content if it exists
+          const ytextContent = ytext.toString();
+          currentEditor?.commands.setContent(ytextContent);
+        } else if (notes?.content) {
+          // Set initial content and update ytext
+          currentEditor?.commands.setContent(notes.content);
+          ytext.insert(0, notes.content as string);
+        }
+        initialSyncDoneRef.current = true;
+      }
+    },
+    [notes?.content],
+  );
+
+  useEffect(() => {
+    initProvider({
+      noteId,
+      ydoc,
+      editor,
+      userId: user.id,
+      username: user.username,
+      userColor,
+      callbacks: {
+        onConnect: handleConnect,
+        onDisconnect: handleDisconnect,
+        onStatus: handleStatus,
+        onSynced: handleSynced,
+      },
+    });
+  }, [
+    editor,
+    handleConnect,
+    handleDisconnect,
+    handleStatus,
+    handleSynced,
+    initProvider,
+    noteId,
+    user.id,
+    user.username,
+    userColor,
+    ydoc,
+  ]);
+
+  // Handle provider reconnection
+  useEffect(() => {
+    if (!provider) return;
+
+    const reconnectInterval = setInterval(() => {
+      if (providerStatusRef.current === "disconnected") {
+        console.log("Attempting to reconnect provider...");
+        provider.disconnect();
+        provider.connect();
+      }
+    }, 5000); // Check every 5 seconds
+
+    return () => {
+      clearInterval(reconnectInterval);
+    };
+  }, [provider]);
+
+  // Track local changes
+  useEffect(() => {
+    if (!editor) return;
+
+    const updateHandler = () => {
+      hasLocalChangesRef.current = true;
+    };
+
+    editor.on("update", updateHandler);
+
+    return () => {
+      editor.off("update", updateHandler);
+    };
+  }, [editor]);
+
+  // Handle content synchronization
+  useEffect(() => {
+    if (!editor || !notes?.content) return;
+
+    const ytext = ydoc.getText("content");
+
+    if (
+      ytext.length === 0 &&
+      !hasLocalChangesRef.current &&
+      !initialSyncDoneRef.current
+    ) {
+      // Only set initial content if we have no local changes and no collaborative content
+      setValue(notes.content);
+      editor.commands.setContent(notes.content);
+      setLastSyncedContent(notes.content);
+    }
+  }, [editor, notes?.content, ydoc]);
+
   // Send cursor mutation
   const sendCursorMutation = api.notes.updateCursorPosition.useMutation();
 
   // Throttled cursor update function
-  const [throttledSendCursor] = useDebouncedCallback(
-    (x: number, y: number) => {
-      sendCursorMutation.mutate({
-        noteId,
-        userId: user.id,
-        username: user.username,
-        x,
-        y,
-        lastUpdate: Date.now(),
-      });
-    },
-    50, // Throttle to 50ms
-  );
+  const [throttledSendCursor] = useDebouncedCallback((x: number, y: number) => {
+    sendCursorMutation.mutate({
+      noteId,
+      userId: user.id,
+      username: user.username,
+      x,
+      y,
+      lastUpdate: Date.now(),
+    });
+  }, 50);
 
   // Handle cursor position changes
   const handleMouseMove = useCallback(
@@ -77,13 +191,12 @@ export default function TextEditor({ noteId }: TextEditorProps) {
       const scrollLeft = window.scrollX || document.documentElement.scrollLeft;
       const scrollTop = window.scrollY || document.documentElement.scrollTop;
 
-      // Calculate position as percentages
       const x = ((event.clientX + scrollLeft - rect.left) / rect.width) * 100;
       const y = ((event.clientY + scrollTop - rect.top) / rect.height) * 100;
 
       const hasMovedSignificantly =
         !lastMousePosition.current ||
-        Math.abs(lastMousePosition.current.x - x) > 1 || // Adjust threshold for percentages
+        Math.abs(lastMousePosition.current.x - x) > 1 ||
         Math.abs(lastMousePosition.current.y - y) > 1;
 
       if (hasMovedSignificantly) {
@@ -99,7 +212,6 @@ export default function TextEditor({ noteId }: TextEditorProps) {
       if (cursorData.userId === user.id) return;
 
       setCursors((prev) => {
-        // Only update if the cursor data is newer than what we have
         const existingCursor = prev[cursorData.userId];
         if (
           existingCursor &&
@@ -117,6 +229,27 @@ export default function TextEditor({ noteId }: TextEditorProps) {
     [user.id],
   );
 
+  // Initialize editor content
+  useEffect(() => {
+    if (!editor || !notes?.content) return;
+
+    const ytext = ydoc.getText("content");
+
+    // Only set initial content if we're the first user
+    if (ytext.length === 0 && !initialSyncDoneRef.current) {
+      setValue(notes.content);
+      editor.commands.setContent(notes.content);
+    }
+  }, [editor, notes?.content, ydoc]);
+
+  // Reset sync flag when noteId changes
+  useEffect(() => {
+    initialSyncDoneRef.current = false;
+    return () => {
+      initialSyncDoneRef.current = false;
+    };
+  }, [noteId]);
+
   // Handle cursor cleanup
   useEffect(() => {
     if (!editorContainerRef.current) return;
@@ -124,7 +257,6 @@ export default function TextEditor({ noteId }: TextEditorProps) {
     const editorContainer = editorContainerRef.current;
     editorContainer.addEventListener("mousemove", handleMouseMove);
 
-    // Clean up stale cursors less frequently
     const cursorCleanupInterval = setInterval(() => {
       const now = Date.now();
       setCursors((prev) => {
@@ -138,7 +270,6 @@ export default function TextEditor({ noteId }: TextEditorProps) {
           }
         });
 
-        // Only return new object if there were changes
         return hasChanges ? newCursors : prev;
       });
     }, 5000);
@@ -147,32 +278,13 @@ export default function TextEditor({ noteId }: TextEditorProps) {
       editorContainer.removeEventListener("mousemove", handleMouseMove);
       clearInterval(cursorCleanupInterval);
     };
-  }, [handleMouseMove, user.id]);
-
-  // Set initial editor content
-  useEffect(() => {
-    if (notes && editor) {
-      setValue(notes.content);
-      editor.commands.setContent(notes.content);
-      setInitialLoad(false);
-    }
-
-    return () => {
-      setValue(undefined);
-      setInitialLoad(false);
-      if (editor) {
-        editor.commands.clearContent();
-      }
-    };
-  }, [editor, notes]);
+  }, [handleMouseMove]);
 
   // Subscribe to cursor updates
   api.notes.subscribeToRealtimeCursorPosition.useSubscription(
     { id: noteId },
     {
       onData: (data) => {
-        if (initialLoad) return;
-
         try {
           if (!data.data.position) {
             console.error("Invalid cursor data received:", data);
@@ -189,13 +301,6 @@ export default function TextEditor({ noteId }: TextEditorProps) {
       },
     },
   );
-
-  const provider = new TiptapCollabProvider({
-    appId: "collab-provider",
-    name: noteId,
-    document: ydoc,
-    baseUrl: `http://localhost:3001`,
-  });
 
   const cursorElements = useMemo(() => {
     return Object.entries(cursors).map(([cursorId, cursorData]) => (
@@ -235,6 +340,10 @@ export default function TextEditor({ noteId }: TextEditorProps) {
     ));
   }, [cursors, userColor]);
 
+  if (isLoading || !provider) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <Suspense fallback={<div>Loading...</div>}>
       <div className="relative flex h-full w-full flex-col overflow-hidden">
@@ -244,11 +353,21 @@ export default function TextEditor({ noteId }: TextEditorProps) {
         >
           {cursorElements}
           <MinimalTiptapEditor
-            provider={provider}
             value={value}
-            onChange={setValue}
+            onChange={(newValue) => {
+              setValue(newValue);
+              if (editor && initialSyncDoneRef.current) {
+                // Only update after initial sync
+                const currentContent = editor.getHTML();
+                const ytext = ydoc.getText("content");
+                if (currentContent !== ytext.toString()) {
+                  ytext.delete(0, ytext.length);
+                  ytext.insert(0, currentContent);
+                }
+              }
+            }}
             ydoc={ydoc}
-            className="h-full w-full"
+            className="h-full w-full overflow-y-auto"
             editorContentClassName="p-5 h-full overflow-y-auto"
             output="html"
             placeholder="Type your description here..."
