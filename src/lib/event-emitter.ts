@@ -6,6 +6,12 @@ import EventEmitter, { on } from "node:events";
 export interface MyEvents {
   addFriend: (userId: string, friend: FriendRequest) => void;
   sendMessage: (userId: string, message: Message) => void;
+  isTyping: (userId: string, friendId: string) => void;
+  typingStateChange: (
+    userId: string,
+    friendId: string,
+    isTyping: boolean,
+  ) => void;
   notesChanges: (userId: string, noteId: string, data: Uint8Array) => void;
   cursorPosition: (
     userId: string,

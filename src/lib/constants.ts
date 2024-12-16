@@ -20,3 +20,6 @@ export const cursorColors = [
   "#9B59B6",
   "#3498DB",
 ] as const;
+
+export const TYPING_TIMEOUT = 3000; // 3 seconds
+export const THROTTLE_INTERVAL = 500; // 1 second
