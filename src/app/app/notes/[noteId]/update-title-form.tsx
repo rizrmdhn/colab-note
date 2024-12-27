@@ -10,6 +10,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { useEditorPermission } from "@/hooks/use-editor-permission";
 import { globalErrorToast, globalSuccessToast } from "@/lib/utils";
 import { useNoteStore } from "@/store/notes.store";
 import { api } from "@/trpc/react";
@@ -23,9 +24,8 @@ export default function UpdateTitleForm({ noteId }: UpdateTitleFormProps) {
   const utils = api.useUtils();
 
   const [notes] = api.notes.getNoteDetails.useSuspenseQuery({ id: noteId });
-  // const [permissions] = api.notes.getUserPermissions.useSuspenseQuery({
-  //   id: noteId,
-  // });
+
+  const { canEdit } = useEditorPermission({ noteId });
 
   const setIsSaving = useNoteStore((state) => state.setIsSaving);
 
@@ -50,12 +50,15 @@ export default function UpdateTitleForm({ noteId }: UpdateTitleFormProps) {
   const form = useForm<{
     title: string;
   }>({
+    disabled: !canEdit,
     defaultValues: {
       title: notes.title,
     },
   });
 
   function onSubmit(values: { title: string }) {
+    if (!canEdit) return;
+
     updateTitleNewNoteMutation.mutate({ id: noteId, title: values.title });
   }
 
@@ -82,7 +85,7 @@ export default function UpdateTitleForm({ noteId }: UpdateTitleFormProps) {
           <Button
             type="submit"
             className="mt-4"
-            disabled={updateTitleNewNoteMutation.isPending}
+            disabled={updateTitleNewNoteMutation.isPending || !canEdit}
           >
             {updateTitleNewNoteMutation.isPending ? (
               <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />

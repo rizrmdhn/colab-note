@@ -18,6 +18,7 @@ import Link from "next/link";
 import { buttonVariants } from "../ui/button";
 import { Users } from "lucide-react";
 import { useParams } from "next/navigation";
+import { useEditorPermission } from "@/hooks/use-editor-permission";
 
 export interface MinimalTiptapProps
   extends Omit<UseMinimalTiptapEditorProps, "onUpdate"> {
@@ -30,59 +31,67 @@ export interface MinimalTiptapProps
 const Toolbar = ({ editor }: { editor: Editor }) => {
   const params = useParams();
 
+  const { canEdit } = useEditorPermission({ noteId: params.noteId as string });
+
   return (
-    <div className="shrink-0 overflow-x-auto border-b border-border p-2">
-      <div className="flex w-max items-center gap-px">
-        <SectionOne editor={editor} activeLevels={[1, 2, 3, 4, 5, 6]} />
+    <div
+      className={cn(
+        canEdit && "shrink-0 overflow-x-auto border-b border-border p-2",
+      )}
+    >
+      {canEdit && (
+        <div className="flex w-max items-center gap-px">
+          <SectionOne editor={editor} activeLevels={[1, 2, 3, 4, 5, 6]} />
 
-        <Separator orientation="vertical" className="mx-2 h-7" />
+          <Separator orientation="vertical" className="mx-2 h-7" />
 
-        <SectionTwo
-          editor={editor}
-          activeActions={[
-            "bold",
-            "italic",
-            "underline",
-            "strikethrough",
-            "code",
-            "clearFormatting",
-          ]}
-          mainActionCount={3}
-        />
+          <SectionTwo
+            editor={editor}
+            activeActions={[
+              "bold",
+              "italic",
+              "underline",
+              "strikethrough",
+              "code",
+              "clearFormatting",
+            ]}
+            mainActionCount={3}
+          />
 
-        <Separator orientation="vertical" className="mx-2 h-7" />
+          <Separator orientation="vertical" className="mx-2 h-7" />
 
-        <SectionThree editor={editor} />
+          <SectionThree editor={editor} />
 
-        <Separator orientation="vertical" className="mx-2 h-7" />
+          <Separator orientation="vertical" className="mx-2 h-7" />
 
-        <SectionFour
-          editor={editor}
-          activeActions={["orderedList", "bulletList"]}
-          mainActionCount={0}
-        />
+          <SectionFour
+            editor={editor}
+            activeActions={["orderedList", "bulletList"]}
+            mainActionCount={0}
+          />
 
-        <Separator orientation="vertical" className="mx-2 h-7" />
+          <Separator orientation="vertical" className="mx-2 h-7" />
 
-        <SectionFive
-          editor={editor}
-          activeActions={["codeBlock", "blockquote", "horizontalRule"]}
-          mainActionCount={0}
-        />
-        <Separator orientation="vertical" className="mx-2 h-7" />
+          <SectionFive
+            editor={editor}
+            activeActions={["codeBlock", "blockquote", "horizontalRule"]}
+            mainActionCount={0}
+          />
+          <Separator orientation="vertical" className="mx-2 h-7" />
 
-        <Link
-          href={`/app/notes/${params.noteId}/collaborator/new`}
-          className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-md",
-            buttonVariants({
-              variant: "ghost",
-            }),
-          )}
-        >
-          <Users className="size-6" />
-        </Link>
-      </div>
+          <Link
+            href={`/app/notes/${params.noteId}/collaborator/new`}
+            className={cn(
+              "flex h-10 w-10 items-center justify-center rounded-md",
+              buttonVariants({
+                variant: "ghost",
+              }),
+            )}
+          >
+            <Users className="size-6" />
+          </Link>
+        </div>
+      )}
     </div>
   );
 };
