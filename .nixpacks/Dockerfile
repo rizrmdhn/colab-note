@@ -17,11 +17,10 @@ ENV CI=$CI NIXPACKS_METADATA=$NIXPACKS_METADATA NODE_ENV=$NODE_ENV NPM_CONFIG_PR
 # install phase
 ENV NIXPACKS_PATH=/app/node_modules/.bin:$NIXPACKS_PATH
 ENV NODE_ENV=production
-ENV HOSTNAME=0.0.0.0
-ENV PORT=4000
 ENV DATABASE_URL="postgresql://postgres:kikigokil11@localhost:5432/colab"
 COPY . /app/.
 # copy .env files
+COPY .env* /app/.
 RUN --mount=type=cache,id=NRzwY1F84-/root/bun,target=/root/.bun bun i --no-save
 
 # build phase
