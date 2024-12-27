@@ -1,4 +1,3 @@
-import type { Node } from "slate";
 import { create } from "zustand";
 
 export interface NoteStore {
@@ -6,8 +5,6 @@ export interface NoteStore {
   setNoteId: (noteId: string) => void;
   isSaving: boolean;
   setIsSaving: (isSaving: boolean) => void;
-  noteContent: Node[] | null;
-  setNoteContent: (noteContent: Node[] | null) => void;
 }
 
 export const useNoteStore = create<NoteStore>((set) => ({
@@ -15,7 +12,4 @@ export const useNoteStore = create<NoteStore>((set) => ({
   setNoteId: (noteId) => set({ noteId }),
   isSaving: false,
   setIsSaving: (isSaving) => set({ isSaving }),
-  noteContent: null,
-
-  setNoteContent: (noteContent) => set({ noteContent }),
 }));
