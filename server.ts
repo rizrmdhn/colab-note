@@ -1,12 +1,15 @@
 import { createServer } from "node:http";
 import next from "next";
 import { Server } from "@hocuspocus/server";
-import { env } from "@/env";
 
-const dev = env.NODE_ENV !== "production";
-const hostname = "localhost";
-const nextPort = Number(env.PORT); // Next.js port
-const hocuspocusPort = Number(env.HOCUSPOCUS_PORT); // Hocuspocus port
+const dev = process.env.NODE_ENV !== "production";
+const hostname = process.env.HOSTNAME ?? "localhost";
+const nextPort = isNaN(Number(process.env.PORT))
+  ? 3000
+  : Number(process.env.PORT);
+const hocuspocusPort = isNaN(Number(process.env.HOCUSPOCUS_PORT))
+  ? 3000
+  : Number(process.env.HOCUSPOCUS_PORT);
 
 // Store server instances for clean shutdown
 let nextHttpServer: ReturnType<typeof createServer>;
