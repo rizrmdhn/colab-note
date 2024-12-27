@@ -1,8 +1,6 @@
 services:
   web:
-    build:
-      context: .
-      dockerfile: .nixpacks/Dockerfile
+    build: .
     env_file:
       - .env
     ports:
