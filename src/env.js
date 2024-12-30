@@ -11,6 +11,7 @@ export const env = createEnv({
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
+    HOSTNAME: z.string().default("localhost"),
     PORT: z.string().default("3000"),
     HOCUSPOCUS_PORT: z.string().default("3001"),
     AWS_ACCESS_KEY: z.string(),
@@ -35,6 +36,7 @@ export const env = createEnv({
   runtimeEnv: {
     DATABASE_URL: process.env.DATABASE_URL,
     NODE_ENV: process.env.NODE_ENV,
+    HOSTNAME: process.env.HOSTNAME,
     PORT: process.env.PORT,
     HOCUSPOCUS_PORT: process.env.HOCUS,
     AWS_ACCESS_KEY: process.env.AWS_ACCESS_KEY,

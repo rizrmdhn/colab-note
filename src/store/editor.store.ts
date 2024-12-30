@@ -3,6 +3,7 @@ import type { Editor } from "@tiptap/react";
 import { TiptapCollabProvider } from "@hocuspocus/provider";
 import type { Doc, Text } from "yjs";
 import type { cursorColors } from "@/lib/constants";
+import { env } from "@/env";
 
 export type ConnectedUser = {
   id: string;
@@ -39,11 +40,16 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
   provider: null,
   setProvider: (provider) => set({ provider }),
   initProvider: (params) => {
+    const baseUrl =
+      env.NODE_ENV === "production"
+        ? `https://${env.HOSTNAME}:${env.HOCUSPOCUS_PORT}`
+        : "http://localhost:3001";
+
     const newProvider = new TiptapCollabProvider({
       appId: "collab-provider",
       name: params.noteId,
       document: params.ydoc,
-      baseUrl: `http://localhost:3001`,
+      baseUrl: baseUrl,
       onConnect: params.callbacks.onConnect,
       onDisconnect: params.callbacks.onDisconnect,
       onStatus: params.callbacks.onStatus,
