@@ -21,8 +21,8 @@ export const createUserSchema = createInsertSchema(users, {
 
 export const updateUserSchema = createInsertSchema(users, {
   name: () => z.string().min(1).max(255),
-  password: () => z.string().min(8).max(255),
-  avatar: () => z.string().min(1).max(255),
+  password: () => z.optional(z.string().min(8).max(255)),
+  avatar: () => z.string().optional(),
   email: () => z.string().email(),
 }).pick({
   name: true,
