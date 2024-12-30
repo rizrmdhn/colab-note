@@ -40,16 +40,11 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
   provider: null,
   setProvider: (provider) => set({ provider }),
   initProvider: (params) => {
-    const baseUrl =
-      env.NODE_ENV === "production"
-        ? env.NEXT_PUBLIC_HOCUSPOCUST_URL
-        : `http://localhost:3001`;
-
     const newProvider = new TiptapCollabProvider({
       appId: "collab-provider",
       name: params.noteId,
       document: params.ydoc,
-      baseUrl: baseUrl,
+      baseUrl: env.NEXT_PUBLIC_HOCUSPOCUS,
       onConnect: params.callbacks.onConnect,
       onDisconnect: params.callbacks.onDisconnect,
       onStatus: params.callbacks.onStatus,

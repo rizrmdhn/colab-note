@@ -5,6 +5,7 @@ services:
       dockerfile: .nixpacks/Dockerfile
       args:
         - NODE_ENV=production
+        - NEXT_PUBLIC_HOCUSPOCUS=${NEXT_PUBLIC_HOCUSPOCUS}
     image: rizrmdhn/colab-note:latest
     container_name: colab-note
     env_file:
@@ -18,4 +19,3 @@ services:
       - AWS_SECRET_KEY=${AWS_SECRET_KEY}
       - AWS_REGION=${AWS_REGION}
       - AWS_BUCKET_NAME=${AWS_BUCKET_NAME}
-      - NEXT_PUBLIC_HOCUSPOCUST_URL=${NEXT_PUBLIC_HOCUSPOCUST_URL}
