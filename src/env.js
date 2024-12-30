@@ -27,6 +27,7 @@ export const env = createEnv({
    */
   client: {
     // NEXT_PUBLIC_CLIENTVAR: z.string(),
+    NEXT_PUBLIC_HOCUSPOCUST_URL: z.string().url(),
   },
 
   /**
@@ -38,7 +39,8 @@ export const env = createEnv({
     NODE_ENV: process.env.NODE_ENV,
     HOSTNAME: process.env.HOSTNAME,
     PORT: process.env.PORT,
-    HOCUSPOCUS_PORT: process.env.HOCUS,
+    HOCUSPOCUS_PORT: process.env.HOCUSPOCUS_PORT,
+    NEXT_PUBLIC_HOCUSPOCUST_URL: process.env.NEXT_PUBLIC_HOCUSPOCUST_URL,
     AWS_ACCESS_KEY: process.env.AWS_ACCESS_KEY,
     AWS_SECRET_KEY: process.env.AWS_SECRET_KEY,
     AWS_REGION: process.env.AWS_REGION,

@@ -42,8 +42,8 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
   initProvider: (params) => {
     const baseUrl =
       env.NODE_ENV === "production"
-        ? `https://${env.HOSTNAME}:${env.HOCUSPOCUS_PORT}`
-        : "http://localhost:3001";
+        ? env.NEXT_PUBLIC_HOCUSPOCUST_URL
+        : `http://localhost:3001`;
 
     const newProvider = new TiptapCollabProvider({
       appId: "collab-provider",
