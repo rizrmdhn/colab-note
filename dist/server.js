@@ -8,7 +8,7 @@ const nextPort = isNaN(Number(process.env.PORT))
     ? 3000
     : Number(process.env.PORT);
 const hocuspocusPort = isNaN(Number(process.env.HOCUSPOCUS_PORT))
-    ? 3000
+    ? 3001
     : Number(process.env.HOCUSPOCUS_PORT);
 // Store server instances for clean shutdown
 let nextHttpServer;
