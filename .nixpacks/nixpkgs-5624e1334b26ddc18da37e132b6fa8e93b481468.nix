@@ -16,6 +16,6 @@ in with pkgs;
           mkdir -p $out/etc/profile.d
           cp ${myLibraries} $out/etc/profile.d/5624e1334b26ddc18da37e132b6fa8e93b481468-env.sh
         '')
-        bun nodejs_18
+        bun nodejs_20
       ];
     }

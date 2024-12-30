@@ -3,6 +3,10 @@ services:
     build:
       context: .
       dockerfile: .nixpacks/Dockerfile
+      args:
+        - NODE_ENV=production
+    image: rizrmdhn/colab-note:latest
+    container_name: colab-note
     env_file:
       - .env
     ports:
@@ -10,3 +14,7 @@ services:
       - "3001:3001"
     environment:
       - DATABASE_URL=${DATABASE_URL}
+      - AWS_ACCESS_KEY=${AWS_ACCESS_KEY}
+      - AWS_SECRET_KEY=${AWS_SECRET_KEY}
+      - AWS_REGION=${AWS_REGION}
+      - AWS_BUCKET_NAME=${AWS_BUCKET_NAME}

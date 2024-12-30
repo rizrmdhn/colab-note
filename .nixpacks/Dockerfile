@@ -16,16 +16,13 @@ ENV CI=$CI NIXPACKS_METADATA=$NIXPACKS_METADATA NODE_ENV=$NODE_ENV NPM_CONFIG_PR
 
 # install phase
 ENV NIXPACKS_PATH=/app/node_modules/.bin:$NIXPACKS_PATH
-ENV NODE_ENV=production
-ENV HOSTNAME="0.0.0.0"
 COPY . /app/.
-# copy .env files
-COPY .env* /app/.
 RUN --mount=type=cache,id=NRzwY1F84-/root/bun,target=/root/.bun bun i --no-save
 
 # build phase
 COPY . /app/.
-RUN --mount=type=cache,id=NRzwY1F84-next/cache,target=/app/.next/cache --mount=type=cache,id=NRzwY1F84-node_modules/cache,target=/app/node_modules/.cache SKIP_ENV_VALIDATION=1 bun run build
+ENV SKIP_ENV_VALIDATION=1
+RUN --mount=type=cache,id=NRzwY1F84-next/cache,target=/app/.next/cache --mount=type=cache,id=NRzwY1F84-node_modules/cache,target=/app/node_modules/.cache bun run build
 
 
 RUN printf '\nPATH=/app/node_modules/.bin:$PATH' >> /root/.profile
