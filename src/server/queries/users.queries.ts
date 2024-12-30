@@ -99,6 +99,18 @@ export const getUserByUsername = async (username: string) => {
   return user;
 };
 
+export const getUserById = async (userId: string) => {
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, userId),
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  return user;
+};
+
 export const getUserByEmail = async (email: string) => {
   const user = await db.query.users.findFirst({
     where: eq(users.email, email),
@@ -253,23 +265,34 @@ export const insertUser = async (data: z.infer<typeof createUserSchema>) => {
 export const updateUser = async (
   userId: string,
   data: z.infer<typeof updateUserSchema>,
+  fileName: string | undefined,
 ) => {
   await db.transaction(async (trx) => {
     const isEmailExists = await getUserByEmail(data.email);
 
-    if (isEmailExists) {
+    if (isEmailExists && isEmailExists.id !== userId) {
       throw new Error("Email already used please use another email");
+    }
+
+    // Build update object dynamically
+    const updateData: Partial<typeof users.$inferInsert> = {
+      name: data.name,
+      email: data.email,
+    };
+
+    // Only add password if provided
+    if (data.password) {
+      updateData.password = await hash(data.password);
+    }
+
+    // Add avatar if provided
+    if (data.avatar) {
+      updateData.avatar = fileName;
     }
 
     const [user] = await trx
       .update(users)
-      .set({
-        email: data.email,
-        password: await hash(data.password),
-        name: data.name,
-        avatar: data.avatar,
-        createdAt: new Date().toISOString(),
-      })
+      .set(updateData)
       .where(eq(users.id, userId))
       .returning()
       .execute();

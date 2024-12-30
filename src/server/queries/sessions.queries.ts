@@ -5,6 +5,7 @@ import { v7 as uuidv7 } from "uuid";
 import { db } from "../db";
 import { session, users } from "../db/schema";
 import { eq } from "drizzle-orm";
+import { generatePresignedUrl } from "../storage";
 
 export async function createSession(
   userId: string,
@@ -61,7 +62,15 @@ export async function validateSessionToken(
       .where(eq(session.id, sessionData.id));
   }
 
-  return { session: sessionData, user: userData };
+  return {
+    session: sessionData,
+    user: {
+      ...userData,
+      avatar: userData.avatar
+        ? await generatePresignedUrl(userData.avatar)
+        : null,
+    },
+  };
 }
 
 export async function invalidateSession(sessionId: string): Promise<void> {

@@ -1,4 +1,9 @@
-import { getAllUsers, searchUser } from "@/server/queries/users.queries";
+import {
+  getAllUsers,
+  getUserById,
+  searchUser,
+  updateUser,
+} from "@/server/queries/users.queries";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { tracked, TRPCError } from "@trpc/server";
 import { z } from "zod";
@@ -18,6 +23,9 @@ import {
   getFriendsByUserId,
   getFriendsByUserIdOrderByMessageCreatedAt,
 } from "@/server/queries/friends.queries";
+import { updateUserSchema } from "@/schema/users";
+import { deleteFile, uploadFile } from "@/server/storage";
+import { base64ToFile } from "@/lib/base64-converter";
 
 export const usersRouter = createTRPCRouter({
   fetchAllUsers: protectedProcedure.query(async ({ ctx }) => {
@@ -196,5 +204,41 @@ export const usersRouter = createTRPCRouter({
       const friend = await deleteFriend(ctx.session.userId, input.friendId);
 
       return friend;
+    }),
+
+  updateProfile: protectedProcedure
+    .input(updateUserSchema)
+    .mutation(async ({ input, ctx }) => {
+      const oldData = await getUserById(ctx.session.userId);
+
+      let filename: string | undefined;
+
+      if (!oldData) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "User not found",
+        });
+      }
+
+      if (oldData.avatar && input.avatar) {
+        // delete old avatar
+        await deleteFile(oldData.avatar);
+      }
+
+      if (input.avatar) {
+        // convert base64 to file
+        const file = await base64ToFile(input.avatar, {
+          filename: `avatar-${ctx.session.userId}`,
+        });
+
+        filename = file.name;
+
+        // upload file
+        await uploadFile(file.name, file);
+      }
+
+      await updateUser(ctx.session.userId, input, filename);
+
+      return true;
     }),
 });
