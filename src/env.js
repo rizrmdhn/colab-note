@@ -11,6 +11,7 @@ export const env = createEnv({
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
+    HOSTNAME: z.string().default("localhost"),
     PORT: z.string().default("3000"),
     HOCUSPOCUS_PORT: z.string().default("3001"),
     AWS_ACCESS_KEY: z.string(),
@@ -26,6 +27,7 @@ export const env = createEnv({
    */
   client: {
     // NEXT_PUBLIC_CLIENTVAR: z.string(),
+    NEXT_PUBLIC_HOCUSPOCUS: z.string().url(),
   },
 
   /**
@@ -35,13 +37,15 @@ export const env = createEnv({
   runtimeEnv: {
     DATABASE_URL: process.env.DATABASE_URL,
     NODE_ENV: process.env.NODE_ENV,
+    HOSTNAME: process.env.HOSTNAME,
     PORT: process.env.PORT,
-    HOCUSPOCUS_PORT: process.env.HOCUS,
+    HOCUSPOCUS_PORT: process.env.HOCUSPOCUS_PORT,
     AWS_ACCESS_KEY: process.env.AWS_ACCESS_KEY,
     AWS_SECRET_KEY: process.env.AWS_SECRET_KEY,
     AWS_REGION: process.env.AWS_REGION,
     AWS_BUCKET_NAME: process.env.AWS_BUCKET_NAME,
     // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
+    NEXT_PUBLIC_HOCUSPOCUS: process.env.NEXT_PUBLIC_HOCUSPOCUS,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

@@ -30,5 +30,6 @@
 **/values.dev.yaml
 **/build
 **/dist
+**/public/__env.js
 LICENSE
 README.md

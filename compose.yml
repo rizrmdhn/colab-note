@@ -5,6 +5,7 @@ services:
       dockerfile: .nixpacks/Dockerfile
       args:
         - NODE_ENV=production
+        - NEXT_PUBLIC_HOCUSPOCUS=${NEXT_PUBLIC_HOCUSPOCUS}
     image: rizrmdhn/colab-note:latest
     container_name: colab-note
     env_file:
